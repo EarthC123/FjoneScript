@@ -8,18 +8,45 @@ local screengui = plrgui:FindFirstChild("ScreenGui")
 local RunService = game:GetService("RunService")
 print("player name is "..plr.Name)
 
+-- Highlight blink (1Hz sine wave)
+local activeHighlights = {}
+local blinkConnection = nil
+local blinkStartTime = os.clock()
+local BLINK_FREQ_HZ = 1
+local BLINK_AMPLITUDE = 0.1
+
+local function startBlinkLoop()
+	if blinkConnection then
+		return
+	end
+	blinkConnection = RunService.RenderStepped:Connect(function()
+		local t = os.clock() - blinkStartTime
+		local factor = (math.sin(2 * math.pi * BLINK_FREQ_HZ * t) + 1) * 0.5
+		for highlight, base in pairs(activeHighlights) do
+			if highlight and highlight.Parent then
+				local fillBase = base.FillTransparency or 0
+				local outlineBase = base.OutlineTransparency or 0
+				highlight.FillTransparency = math.clamp(fillBase+(1-fillBase)*factor*0.8, 0, 1)
+				highlight.OutlineTransparency = math.clamp(outlineBase+(1-outlineBase)*factor*0.8, 0, 1)
+			else
+				activeHighlights[highlight] = nil
+			end
+		end
+	end)
+end
+
 --ESP
 local itemblacklist = {
-	"AirHorn",
+	--"AirHorn",
 	"BonBon",
 	"Chocolate",
-	"ExtractionSpeedCandy",
+	--"ExtractionSpeedCandy",
 	"Gumball",
 	"Jawbreaker",
-	"ProteinBar",
+	--"ProteinBar",
 	"SkillCheckCandy",
-	"SpeedCandy",
-	"StaminaCandy",
+	--"SpeedCandy",
+	--"StaminaCandy",
 	"StealthCandy",
 	"Stopwatch",
 }
@@ -39,8 +66,17 @@ local function onAdded(item)
 	local highlighteffect = Instance.new("Highlight", item)
 	highlighteffect.Name = "FjoneHighlight"
 	if item.Name == "Generator" then
+		if item.Stats:FindFirstChild("Completed").Value == true then
+			return nil
+		end
 		highlighteffect.OutlineTransparency = 0.8
 		highlighteffect.FillTransparency=1
+		local function onGenComplete()
+			if item.Stats:FindFirstChild("Completed").Value == true then
+				highlighteffect:Destroy()
+			end
+		end
+		item.Stats:FindFirstChild("Completed"):GetPropertyChangedSignal("Value"):Connect(onGenComplete)
 	elseif item.Parent.Name == "Items" then
 		highlighteffect.FillTransparency=0.7
 		highlighteffect.FillColor = Color3.fromRGB(30, 144, 255)
@@ -60,6 +96,12 @@ local function onAdded(item)
 		highlighteffect.OutlineTransparency=0.3
 		highlighteffect.FillTransparency = 0.7
 	end
+
+	activeHighlights[highlighteffect] = {
+		FillTransparency = highlighteffect.FillTransparency,
+		OutlineTransparency = highlighteffect.OutlineTransparency,
+	}
+	startBlinkLoop()
 end
 
 local function Fjone_HighLight(room, foldername)
