@@ -86,7 +86,7 @@ end
 local playerlist = workspace.InGamePlayers:GetChildren()
 for playeridx in playerlist do
 	if playerlist[playeridx].Name == plr.Name then
-		--continue
+		continue
 	end
 	local playerentity = playerlist[playeridx]
 	print("Highlight game player is "..playerentity.Name)
