@@ -1,0 +1,579 @@
+local plrsrv = game:GetService("Players")
+local replicated = game:GetService("ReplicatedStorage")
+local userinputservice = game:GetService("UserInputService")
+local plr = plrsrv.LocalPlayer
+local localcharacter = plr.Character or plr.CharacterAdded:Wait()
+local plrgui = plr:WaitForChild("PlayerGui")
+local screengui = plrgui:FindFirstChild("ScreenGui")
+local RunService = game:GetService("RunService")
+print("player name is "..plr.Name)
+
+--ESP
+local itemblacklist = {
+	"AirHorn",
+	"BonBon",
+	"Chocolate",
+	"ExtractionSpeedCandy",
+	"Gumball",
+	"Jawbreaker",
+	"ProteinBar",
+	"SkillCheckCandy",
+	"SpeedCandy",
+	"StaminaCandy",
+	"StealthCandy",
+	"Stopwatch",
+}
+
+local function onAdded(item)
+	print(item.Name)
+	local isHighlight = item:FindFirstChild("FjoneHighlight")
+	if isHighlight ~= nil then
+	    return
+	end
+
+	for blackidx in itemblacklist do
+		if item.Name == itemblacklist[blackidx] then
+			return nil
+		end
+	end
+	local highlighteffect = Instance.new("Highlight", item)
+	highlighteffect.Name = "FjoneHighlight"
+	if item.Name == "Generator" then
+		highlighteffect.OutlineTransparency = 0.8
+		highlighteffect.FillTransparency=1
+	elseif item.Parent.Name == "Items" then
+		highlighteffect.FillTransparency=0.7
+		highlighteffect.FillColor = Color3.fromRGB(30, 144, 255)
+		if item.Name=="Bandage" or item.Name=="HealthKit" then
+			highlighteffect.OutlineTransparency=0.1
+		else
+			highlighteffect.OutlineTransparency=1
+		end
+	elseif item.Parent.Name == "InGamePlayers" then
+		highlighteffect.FillTransparency=0.7
+		highlighteffect.OutlineTransparency = 0.1
+		highlighteffect.FillColor = Color3.fromRGB(0, 128, 0)
+		highlighteffect.OutlineColor = Color3.fromRGB(0, 100, 0)
+	else
+		highlighteffect.OutlineColor = Color3.fromRGB(178,34,34)
+		highlighteffect.FillColor = Color3.fromRGB(178,34,34)
+		highlighteffect.OutlineTransparency=0.3
+		highlighteffect.FillTransparency = 0.7
+	end
+end
+
+local function Fjone_HighLight(room, foldername)
+	print("Current Floor Name is "..room.Name)
+	local dir = room:WaitForChild(foldername)
+	local list = dir:GetChildren()
+	for itemidx in list do
+		onAdded(list[itemidx])
+	end
+	dir.ChildAdded:Connect(onAdded)
+end
+
+local function onRoomGen(roominstance)
+	Fjone_HighLight(roominstance,"Monsters")
+	Fjone_HighLight(roominstance,"Generators")
+	Fjone_HighLight(roominstance,"Items")
+end
+
+local function onRoomDestroy(roominstance)
+	print("the room destroyed is "..roominstance.name)
+end
+
+--Highlight player
+local playerlist = workspace.InGamePlayers:GetChildren()
+for playeridx in playerlist do
+	if playerlist[playeridx].Name == plr.Name then
+		--continue
+	end
+	local playerentity = playerlist[playeridx]
+	print("Highlight game player is "..playerentity.Name)
+	onAdded(playerentity)
+	local billboard = Instance.new("BillboardGui", playerentity)
+	billboard.Size = UDim2.new(10,0,10,0)
+	billboard.AlwaysOnTop = true
+	billboard.MaxDistance = 150
+	billboard.StudsOffset = Vector3.new(0, -3, 0)
+	local frame = Instance.new("Frame", billboard)
+	frame.Size = UDim2.new(0.3,0,0.4,0)
+	frame.BackgroundTransparency = 1
+	frame.Position = UDim2.new(0.35,0,0.6,0)
+	frame.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+
+	--新建垂直布局
+	local mainLayout = Instance.new("UIListLayout", frame)
+	mainLayout.FillDirection = Enum.FillDirection.Vertical
+	mainLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	mainLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+	mainLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	mainLayout.Padding = UDim.new(0, 0)
+	--上行：心和体力
+	local heartRow = Instance.new("Frame", frame)
+	heartRow.Size = UDim2.new(1,0,0.5,0)
+	heartRow.BackgroundTransparency = 1
+	heartRow.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+	--上行：间隔
+	local layout = Instance.new("UIListLayout", heartRow)
+	layout.FillDirection = Enum.FillDirection.Horizontal
+	layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	layout.VerticalAlignment = Enum.VerticalAlignment.Center
+	layout.SortOrder = Enum.SortOrder.LayoutOrder
+	layout.Padding = UDim.new(0.05, 0)
+	--下行：slot
+	local slotRow = Instance.new("Frame", frame)
+	slotRow.Size = UDim2.new(1,0,0.5,0)
+	slotRow.BackgroundTransparency = 1
+	slotRow.BackgroundColor3 = Color3.fromRGB(0, 0, 255)
+	
+	--心的显示
+	local textlabel = Instance.new("TextLabel", heartRow)
+	textlabel.Size=UDim2.new(1.5,0,1.5,0)
+	textlabel.Position=UDim2.new(-0.25,0,0,0)
+	textlabel.TextScaled = true
+	textlabel.TextSize = 21
+	textlabel.TextColor3 = Color3.new(0,1,0)
+	textlabel.BackgroundTransparency = 1
+	local healthstr=""
+	for i = 1, playerentity.Humanoid.Health do
+		healthstr = healthstr.."🤍"
+	end
+	textlabel.Text = healthstr
+	playerentity.Humanoid.HealthChanged:Connect(function(health)
+		local healthstrnew = ""
+		for i = 1, health do
+			healthstrnew = healthstrnew.."🤍"
+		end
+		for i = 1, playerentity.Humanoid.MaxHealth-health do
+			healthstrnew = healthstrnew.."🖤"
+		end
+		textlabel.Text = healthstrnew
+		print("new life "..health)
+	end)
+	
+	--体力数值显示
+    local Staminatextlabel = Instance.new("TextLabel", heartRow)
+	Staminatextlabel.Size=UDim2.new(1,0,1,0)
+	Staminatextlabel.Position=UDim2.new(-0.25,0,0,0)
+	Staminatextlabel.TextScaled = true
+	Staminatextlabel.TextSize = 18
+	Staminatextlabel.TextColor3 = Color3.new(0,1,0)
+	Staminatextlabel.BackgroundTransparency = 1
+	Staminatextlabel.Font = Enum.Font.LuckiestGuy
+	local function UpdateStamina()
+	    local CurrentStamina=playerentity.Stats.CurrentStamina
+	    local MaxStamina=playerentity.Stats.Stamina
+	    local ratio=CurrentStamina.Value/MaxStamina.Value
+	    if ratio>=0.5 then
+	        Staminatextlabel.TextColor3 = Color3.new(2-2*ratio,1,0)
+	    else
+	        Staminatextlabel.TextColor3 = Color3.new(1,ratio*2,0)
+	    end
+	    local staminastr=math.floor(CurrentStamina.Value).."/"..MaxStamina.Value
+	    Staminatextlabel.Text=staminastr
+	end
+	UpdateStamina()
+	playerentity.Stats.CurrentStamina:GetPropertyChangedSignal("Value"):Connect(UpdateStamina)
+
+	--slot的显示
+	local playerslotlist=playerentity.Inventory:GetChildren()
+	-- 横向居中布局（只建一次）
+	local layout = Instance.new("UIListLayout", slotRow)
+	layout.FillDirection = Enum.FillDirection.Horizontal
+	layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	layout.VerticalAlignment = Enum.VerticalAlignment.Top
+	layout.SortOrder = Enum.SortOrder.LayoutOrder
+	layout.Padding = UDim.new(0, 0)
+
+	for slotidx, slotValue in ipairs(playerslotlist) do
+	    -- 每个 slot 的圆形底
+	    local slotCircle = Instance.new("ImageLabel", slotRow)
+	    slotCircle.Size = UDim2.new(0.5, 0, 1, 0)
+	    slotCircle.BackgroundTransparency = 1
+	    slotCircle.Image = "rbxassetid://3570695787"
+	    slotCircle.ImageColor3 = Color3.fromRGB(55, 55, 55)
+		slotCircle.ScaleType = Enum.ScaleType.Fit
+
+	    -- 物品图标
+	    local icon = Instance.new("ImageLabel", slotCircle)
+	    icon.Size = UDim2.new(1, 0, 1, 0)
+	    icon.Position = UDim2.new(0, 0, 0, 0)
+	    icon.BackgroundTransparency = 1
+	    icon.Image = ""
+	    icon.Visible = false
+	    icon.ScaleType = Enum.ScaleType.Fit
+
+	    local function updateSlotIcon()
+	        local itemname = slotValue.Value
+			print(playerlist[playeridx].Name .. " slot " .. slotidx .. " has " .. itemname)
+
+	        slotCircle.ImageColor3 = Color3.fromRGB(55, 55, 55)
+	        icon.Visible = false
+	        icon.Image = ""
+
+	        if itemname == "None" then
+	            return
+	        end
+
+	        local itemscript = replicated.ItemModules:FindFirstChild(itemname)
+	        if not itemscript then
+	            return
+	        end
+
+	        local itemarray = require(itemscript)
+	        local ItemIcon = itemarray.Icon
+	        if ItemIcon and ItemIcon ~= "" then
+	            icon.Image = ItemIcon
+	            icon.Visible = true
+	        end
+	    end
+
+	    updateSlotIcon()
+	    slotValue:GetPropertyChangedSignal("Value"):Connect(updateSlotIcon)
+	end
+end
+--workspace.InGamePlayers.Ashley_186i3.Stats.Health
+--workspace.InGamePlayers.Ashley_186i3.Humanoid
+
+--Highlight room entity
+local roomdir=workspace.CurrentRoom
+local roomentity=roomdir:FindFirstChildOfClass("Model") 
+if roomentity ~= nil then
+	onRoomGen(roomentity)
+end
+roomdir.ChildAdded:Connect(onRoomGen)
+roomdir.ChildRemoved:Connect(onRoomDestroy)
+
+--Vee Ads free
+function hasProperty(object, propertyName)
+    local success, _ = pcall(function() 
+        object[propertyName] = object[propertyName]
+    end)
+    return success
+end
+
+if screengui ~= nil then
+    print("screengui founded")
+    local popup= screengui:FindFirstChild("PopUp")
+    if popup ~= nil then
+        print(popup.Name.." Founded")
+        local list = popup:GetChildren()
+	    for itemidx in list do
+		    if hasProperty(list[itemidx],"Visible") then
+		        print("hide "..list[itemidx].Name)
+		        list[itemidx].Visible = false
+		    end
+	    end
+    end
+end
+
+--[[
+--confuse tw (patched)
+local decoyChar = nil
+local enabledecoy = false
+function placedecoy()
+    decoyChar=localcharacter:Clone()
+    decoyChar.Parent = game.Workspace
+end
+function removedecoy()
+    decoyChar:Destroy()
+end
+
+function confusetwisted()
+	replicated.Events.GetCharacterPosition.OnClientInvoke = function() 
+		return decoyChar:GetPivot().Position
+	end
+end
+
+function restoretw()
+	replicated.Events.GetCharacterPosition.OnClientInvoke = function() 
+		return localcharacter:GetPivot().Position
+	end
+end
+
+local ToggleButton = Instance.new("TextButton")
+ToggleButton.Size = UDim2.new(0, 100, 0, 40)
+ToggleButton.Position = UDim2.new(0.9, -50, 0.4, 45)
+ToggleButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+ToggleButton.Text = "Decoy: OFF"
+ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleButton.Font = Enum.Font.SourceSansBold
+ToggleButton.TextSize = 18
+ToggleButton.Parent = screengui
+
+function toggleconfuse()
+    enabledecoy = not enabledecoy
+    ToggleButton.Text = enabledecoy and "Decoy: ON" or "Decoy: OFF"
+    if enabledecoy then
+        placedecoy()
+        confusetwisted()
+    else
+        restoretw()
+        removedecoy()
+    end
+end
+
+ToggleButton.MouseButton1Click:Connect(toggleconfuse)
+userinputservice.InputBegan:Connect(function(inputobj, processevent)
+    if not processevent then
+        if inputobj.KeyCode == Enum.KeyCode.ButtonR2 then
+            toggleconfuse()
+        end
+    end
+end)
+--]]
+
+--infinite stamina
+local sprintevent = replicated.Events:WaitForChild("SprintEvent")
+local updateLoop = nil
+local updateEnabled = false
+local sprinting = localcharacter.Stats.Sprinting
+
+local serversidesprint = nil
+
+function looprunspeed()
+    localcharacter.Humanoid.WalkSpeed = plr:GetAttribute("KM_MAX_PLAYER_SPEED")
+	sprinting.Value = updateEnabled
+	if not updateLoop then
+		updateLoop = coroutine.create(function()
+			while updateEnabled do
+				localcharacter.Humanoid.WalkSpeed = plr:GetAttribute("KM_MAX_PLAYER_SPEED")
+				sprinting.Value = updateEnabled
+				task.wait()
+			end
+		end)
+	end
+	coroutine.resume(updateLoop)
+end
+
+function enablelooprunspeed()
+	updateEnabled = true
+	localcharacter.Humanoid.WalkSpeed = plr:GetAttribute("KM_MAX_PLAYER_SPEED")
+	sprinting.Value = updateEnabled
+	print("enablelooprunspeed:done")
+end
+
+local walkspeed=0
+function disablelooprunspeed()
+	updateEnabled = false
+	if walkspeed ~= 0 and serversidesprint == false then
+	    localcharacter.Humanoid.WalkSpeed = walkspeed
+	end
+	sprinting.Value = updateEnabled
+	print("disablelooprunspeed:done")
+end
+
+--remove sprint event on client event
+for i, connection in pairs(getconnections(sprintevent.OnClientEvent)) do
+    print("disable sprintevent.OnClientEvent")
+    connection:Disable()
+end
+
+sprintevent.OnClientEvent:Connect(function(arg1)
+    print("sprintevent.OnClientEvent, server is false")
+    serversidesprint=false
+    walkspeed=localcharacter.Humanoid.WalkSpeed
+	enablelooprunspeed()
+end)
+
+
+for i, connection in pairs(getconnections(screengui.MobileRun.Activated)) do
+    print("disable screengui.MobileRun.Activated")
+    connection:Disable()
+end
+
+screengui.MobileRun.Activated:Connect(function()
+	if screengui.MobileRun.TextLabel.Text == "SPRINT: OFF" then
+		screengui.MobileRun.TextLabel.Text = "SPRINT: ON"
+		screengui.MobileRun.Image = "rbxassetid://11866539249"
+		sprintevent:FireServer(true)
+		serversidesprint=true
+		screengui.SprintIcon.Visible = false
+		enablelooprunspeed()
+		return
+	end
+	disablelooprunspeed()
+	screengui.MobileRun.TextLabel.Text = "SPRINT: OFF"
+	screengui.MobileRun.Image = "rbxassetid://11866517702"
+	screengui.SprintIcon.Visible = false
+	--[[
+	if serversidesprint == false then
+	    sprintevent:FireServer(true)
+	    task.wait(0.05)
+	end
+	--]]
+	sprintevent:FireServer(false)
+	serversidesprint=false
+end)
+
+local isprocessed = false
+userinputservice.InputBegan:Connect(function(inputobj, processevent)
+    if processevent then
+        return
+    end
+    if inputobj.KeyCode == Enum.KeyCode.ButtonR1 then
+        if isprocessed then
+            return
+        end
+        enablelooprunspeed()
+        serversidesprint=true
+        isprocessed = true
+        print("in r1 input begin, send server true")
+    end
+end)
+
+userinputservice.InputEnded:Connect(function(inputobj, processevent)
+    if processevent then
+        return
+    end
+    if inputobj.KeyCode == Enum.KeyCode.ButtonR1 then
+        disablelooprunspeed()
+        --[[
+        if serversidesprint == false then
+            task.wait(0.05)
+            print("in r1 input end ,server is false, send true then false")
+	        sprintevent:FireServer(true)
+	        task.wait(0.05)
+	    end
+	    --]]
+	    print("in r1 input end ,send false ")
+	    sprintevent:FireServer(false)
+	    serversidesprint=false
+	    isprocessed=false
+    end
+end)
+
+
+--noclip
+local elevator=workspace:FindFirstChild("Elevators") and workspace.Elevators:FindFirstChild("Elevator")
+local elevatorcframe=elevator and elevator:GetPivot() * CFrame.new(0, 3, 0)
+
+function createNoclip()
+	local connections = {} -- Store connections for toggling
+	local touchedObjects = {} -- Store touched objects
+
+	-- Function to check if a part should be ignored by noclip
+	local function shouldIgnorePart(part)
+		-- Ignore visualization spheres (ends with "Sphere")
+		if string.match(part.Name, "Sphere$") then
+			return true
+		end
+
+		-- Ignore MonsterBlockers
+		if part.Name == "MonsterBlocker" then
+			return true
+		end
+
+		-- Ignore parts that belong to the player
+		if part:IsDescendantOf(localcharacter) then
+			return true
+		end
+
+		return false
+	end
+
+	-- Function to disable collision of the touched object
+	local function disableCollision(part)
+		if part and part:IsA("BasePart") and not shouldIgnorePart(part) then
+			-- Only disable collision if it was originally collidable
+			if part.CanCollide then
+				part.CanCollide = false
+				touchedObjects[part] = true
+			end
+		end
+	end
+
+	-- Function to enable collision of the object
+	local function enableCollision(part)
+		if part and part:IsA("BasePart") and touchedObjects[part] then
+			part.CanCollide = true
+			touchedObjects[part] = nil
+		end
+	end
+
+	-- Function to handle the Touched event
+	local function onTouched(otherPart)
+		if not otherPart or not otherPart:IsA("BasePart") then return end
+
+		-- Skip ignored parts
+		if shouldIgnorePart(otherPart) then return end
+
+		-- Handle Baseplate teleport logic
+		if otherPart.Name == "Baseplate" then
+			teleportplr(elevatorcframe)
+			return
+		end
+
+		-- Regular noclip handling
+		if not touchedObjects[otherPart] then
+			disableCollision(otherPart)
+		end
+	end
+
+	-- Function to handle the TouchEnded event
+	local function onTouchEnded(otherPart)
+		if otherPart and otherPart:IsA("BasePart") then
+			enableCollision(otherPart)
+		end
+	end
+
+	-- Enable noclip for the character
+	local function enableNoclip()
+		if not connections.touched then
+			connections.touched = localcharacter.HumanoidRootPart.Touched:Connect(onTouched)
+		end
+		if not connections.touchEnded then
+			connections.touchEnded = localcharacter.HumanoidRootPart.TouchEnded:Connect(onTouchEnded)
+		end
+	end
+
+	-- Disable noclip
+	local function disableNoclip()
+		for _, conn in pairs(connections) do
+			conn:Disconnect()
+		end
+		connections = {}
+
+		-- Re-enable collision for all parts that were touched
+		for part in pairs(touchedObjects) do
+			enableCollision(part)
+		end
+		touchedObjects = {}
+	end
+
+	return enableNoclip, disableNoclip
+end
+
+-- Create the noclip functions
+local enableNoclip, disableNoclip = createNoclip()
+
+local enablenoclip = false
+local ToggleButton = Instance.new("TextButton")
+ToggleButton.Size = UDim2.new(0, 100, 0, 40)
+ToggleButton.Position = UDim2.new(0.9, -50, 0.4, 45)
+ToggleButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+ToggleButton.Text = "NoClip: OFF"
+ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleButton.Font = Enum.Font.SourceSansBold
+ToggleButton.TextSize = 18
+ToggleButton.Parent = screengui
+
+function togglenoclip()
+    enablenoclip = not enablenoclip
+    ToggleButton.Text = enablenoclip and "NoClip: ON" or "NoClip: OFF"
+    if enablenoclip then
+        enableNoclip()
+    else
+        disableNoclip()
+    end
+end
+
+ToggleButton.MouseButton1Click:Connect(togglenoclip)
+userinputservice.InputBegan:Connect(function(inputobj, processevent)
+    if not processevent then
+        if inputobj.KeyCode == Enum.KeyCode.ButtonR2 then
+            togglenoclip()
+        end
+    end
+end)
