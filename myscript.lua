@@ -66,7 +66,7 @@ local function onAdded(item)
 	local highlighteffect = Instance.new("Highlight", item)
 	highlighteffect.Name = "FjoneHighlight"
 	if item.Name == "Generator" then
-		if item.Stats:FindFirstChild("Completed").Value == true then
+		if item:FindFirstChild("Stats") and item.Stats:FindFirstChild("Completed").Value == true then
 			return nil
 		end
 		highlighteffect.OutlineTransparency = 0.8
