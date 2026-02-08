@@ -53,6 +53,11 @@ local itemblacklist = {
 
 local function onAdded(item)
 	print(item.Name)
+	--highlight sprout tentacles
+	--workspace.CurrentRoom.Warehouse1.FreeArea.SproutTendril
+	if item.Parent.Name=="FreeArea" and item.Name~="SproutTendril" then
+	    return
+	end
 	local isHighlight = item:FindFirstChild("FjoneHighlight")
 	if isHighlight ~= nil then
 	    return
@@ -67,6 +72,7 @@ local function onAdded(item)
 	highlighteffect.Name = "FjoneHighlight"
 	if item.Name == "Generator" then
 		if item:FindFirstChild("Stats") and item.Stats:FindFirstChild("Completed").Value == true then
+		    highlighteffect:Destroy()
 			return nil
 		end
 		highlighteffect.OutlineTransparency = 0.8
@@ -114,10 +120,49 @@ local function Fjone_HighLight(room, foldername)
 	dir.ChildAdded:Connect(onAdded)
 end
 
+--highlight blot hands
+--workspace.CurrentRoom.AstroMap.BlotHandZone_2.BlotHand_L
+local function highlightblothand(hand)
+    print("hand is "..hand.Name)
+    local arm = hand:WaitForChild("Arm")
+    local isHighlight = arm:FindFirstChild("FjoneHighlight")
+	if isHighlight ~= nil then
+	    return
+	end
+    local highlighteffect = Instance.new("Highlight", arm)
+    highlighteffect.Name = "FjoneHighlight"
+    highlighteffect.OutlineColor = Color3.fromRGB(178,34,34)
+	highlighteffect.FillColor = Color3.fromRGB(178,34,34)
+	highlighteffect.OutlineTransparency=0.3
+	highlighteffect.FillTransparency = 0.7
+    activeHighlights[highlighteffect] = {
+		FillTransparency = highlighteffect.FillTransparency,
+		OutlineTransparency = highlighteffect.OutlineTransparency,
+	}
+end
+
+local function highlightblotzone(entity)
+    if entity:IsA("Part") and string.find(entity.Name,"BlotHandZone") then
+        print("find blot hand zone "..entity.Name)
+        local hand = entity:FindFirstChildOfClass("Model")
+        if hand == nil then
+            print("blot hand not loaded")
+            entity.ChildAdded:Connect(highlightblothand)
+        else
+            highlightblothand(hand)
+        end
+    end
+end
+
 local function onRoomGen(roominstance)
+    for idx,instance in roominstance:GetChildren() do
+        highlightblotzone(instance)
+    end
+    roominstance.ChildAdded:Connect(highlightblotzone)
 	Fjone_HighLight(roominstance,"Monsters")
 	Fjone_HighLight(roominstance,"Generators")
 	Fjone_HighLight(roominstance,"Items")
+	Fjone_HighLight(roominstance,"FreeArea")
 end
 
 local function onRoomDestroy(roominstance)
@@ -619,3 +664,11 @@ userinputservice.InputBegan:Connect(function(inputobj, processevent)
         end
     end
 end)
+
+
+--auto skillcheck（hook remote function method）
+--local TreadmillTapSkillCheck_upvr_2 = require(game.ReplicatedStorage.Modules.TreadmillTapSkillCheck)
+--local CircleSkillCheckHandler_upvr = require(ReplicatedStorage_upvr.Modules.CircleSkillCheckHandler)
+--local RF = game:GetService("ReplicatedStorage").Events.SkillcheckUpdate
+--local RF = game:GetService("ReplicatedStorage").Modules.Network.RemoteFunction;
+--local cb = getcallbackvalue(RF, "OnClientInvoke");
