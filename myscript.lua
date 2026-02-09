@@ -686,7 +686,25 @@ skillcheckupdate.OnClientInvoke = function(...)
     result = oriskillcheckupdate(...)
     print("[SkillcheckUpdate] return:", result)
 
-    return "supercomplete"
+	--for normal and circle machine, it should be supercomplete
+	--for treadmill tap, it should be true
+	local arg2 = select(2, ...)
+	print("arg2 typeof is "..typeof(arg2))
+	if arg2 and typeof(arg2) == "table" then
+	    if arg2.type == "treadmill" then
+		    print("it is treadmill, return true")
+		    return true
+		elseif arg2.type == "circle" then
+		    print("it is circle machine, return supercomplete")
+		    return "supercomplete"
+		else
+		    print("arg2.type is "..arg2.type)
+		    return true
+		end
+	else
+		print("it is normal machine, return supercomplete")
+		return "supercomplete"
+	end
 end
 print("Fjone: Hooking SkillcheckUpdate Success...")
 
