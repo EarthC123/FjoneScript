@@ -154,7 +154,13 @@ local function highlightblotzone(entity)
     end
 end
 
+--Highlight room entity
+local roomdir=workspace.CurrentRoom
+local roomentity=roomdir:FindFirstChildOfClass("Model")
+
 local function onRoomGen(roominstance)
+	print("the room Gen is "..roominstance.Name)
+	roomentity = roominstance
     for idx,instance in roominstance:GetChildren() do
         highlightblotzone(instance)
     end
@@ -166,10 +172,19 @@ local function onRoomGen(roominstance)
 end
 
 local function onRoomDestroy(roominstance)
-	print("the room destroyed is "..roominstance.name)
+	roomentity = nil
+	print("the room destroyed is "..roominstance.Name)
 end
 
+if roomentity ~= nil then
+	onRoomGen(roomentity)
+end
+roomdir.ChildAdded:Connect(onRoomGen)
+roomdir.ChildRemoved:Connect(onRoomDestroy)
+
 --Highlight player
+--workspace.InGamePlayers.Ashley_186i3.Stats.Health
+--workspace.InGamePlayers.Ashley_186i3.Humanoid
 local playerlist = workspace.InGamePlayers:GetChildren()
 for playeridx in playerlist do
 	if playerlist[playeridx].Name == plr.Name then
@@ -320,17 +335,6 @@ for playeridx in playerlist do
 	    slotValue:GetPropertyChangedSignal("Value"):Connect(updateSlotIcon)
 	end
 end
---workspace.InGamePlayers.Ashley_186i3.Stats.Health
---workspace.InGamePlayers.Ashley_186i3.Humanoid
-
---Highlight room entity
-local roomdir=workspace.CurrentRoom
-local roomentity=roomdir:FindFirstChildOfClass("Model") 
-if roomentity ~= nil then
-	onRoomGen(roomentity)
-end
-roomdir.ChildAdded:Connect(onRoomGen)
-roomdir.ChildRemoved:Connect(onRoomDestroy)
 
 --Vee Ads free
 function hasProperty(object, propertyName)
@@ -665,10 +669,31 @@ userinputservice.InputBegan:Connect(function(inputobj, processevent)
     end
 end)
 
-
 --auto skillcheck（hook remote function method）
 --local TreadmillTapSkillCheck_upvr_2 = require(game.ReplicatedStorage.Modules.TreadmillTapSkillCheck)
 --local CircleSkillCheckHandler_upvr = require(ReplicatedStorage_upvr.Modules.CircleSkillCheckHandler)
 --local RF = game:GetService("ReplicatedStorage").Events.SkillcheckUpdate
---local RF = game:GetService("ReplicatedStorage").Modules.Network.RemoteFunction;
 --local cb = getcallbackvalue(RF, "OnClientInvoke");
+local skillcheckupdate = replicated.Events:WaitForChild("SkillcheckUpdate")
+local oriskillcheckupdate = getcallbackvalue(skillcheckupdate, "OnClientInvoke")
+print("Fjone: try Hooking SkillcheckUpdate...")
+skillcheckupdate.OnClientInvoke = function(...)
+    local args = { ... }
+    local result
+
+    print("[SkillcheckUpdate] args:", unpack(args))
+
+    result = oriskillcheckupdate(...)
+    print("[SkillcheckUpdate] return:", result)
+
+    return "supercomplete"
+end
+print("Fjone: Hooking SkillcheckUpdate Success...")
+
+--open all the light
+if roomentity ~= nil then
+	local roomlights=roomentity:WaitForChild("Lights")
+end
+
+--close all the light
+
