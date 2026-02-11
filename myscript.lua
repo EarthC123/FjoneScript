@@ -6,6 +6,7 @@ local localcharacter = plr.Character or plr.CharacterAdded:Wait()
 local plrgui = plr:WaitForChild("PlayerGui")
 local screengui = plrgui:FindFirstChild("ScreenGui")
 local RunService = game:GetService("RunService")
+local lighting=game:GetService("Lighting")
 print("player name is "..plr.Name)
 
 -- Highlight blink (1Hz sine wave)
@@ -52,7 +53,7 @@ local itemblacklist = {
 }
 
 local function onAdded(item)
-	print(item.Name)
+	--print(item.Name)
 	--highlight sprout tentacles
 	--workspace.CurrentRoom.Warehouse1.FreeArea.SproutTendril
 	if item.Parent.Name=="FreeArea" and item.Name~="SproutTendril" then
@@ -675,16 +676,25 @@ end)
 --local RF = game:GetService("ReplicatedStorage").Events.SkillcheckUpdate
 --local cb = getcallbackvalue(RF, "OnClientInvoke");
 local skillcheckupdate = replicated.Events:WaitForChild("SkillcheckUpdate")
-local oriskillcheckupdate = getcallbackvalue(skillcheckupdate, "OnClientInvoke")
+local oriskillcheckupdate = nil
 print("Fjone: try Hooking SkillcheckUpdate...")
+while oriskillcheckupdate == nil do
+    oriskillcheckupdate = getcallbackvalue(skillcheckupdate, "OnClientInvoke")
+    task.wait(1)
+end
+
 skillcheckupdate.OnClientInvoke = function(...)
     local args = { ... }
     local result
 
     print("[SkillcheckUpdate] args:", unpack(args))
 
-    result = oriskillcheckupdate(...)
-    print("[SkillcheckUpdate] return:", result)
+    if oriskillcheckupdate ~= nil then
+        result = oriskillcheckupdate(...)
+        print("[SkillcheckUpdate] return:", result)
+    else
+        print("[SkillcheckUpdate] oriskillcheckupdate is still nil")
+    end
 
 	--for normal and circle machine, it should be supercomplete
 	--for treadmill tap, it should be true
@@ -709,9 +719,28 @@ end
 print("Fjone: Hooking SkillcheckUpdate Success...")
 
 --open all the light
-if roomentity ~= nil then
-	local roomlights=roomentity:WaitForChild("Lights")
+local function setLightRange(root, range)
+    if not root then return end
+    for _, inst in ipairs(root:GetDescendants()) do
+        if inst:IsA("Light") then
+            inst.Range = range
+        end
+    end
 end
 
---close all the light
+local function OpenLight()
+    if lighting.FogEnd == 250 then
+        print("light back")
+        return
+    end
+    task.wait(5)
+    if roomentity ~= nil then
+        lighting.FogEnd=250
+        local roomlights=roomentity:WaitForChild("Lights")
+        --open all the light
+        setLightRange(roomlights, 60)
+        print("set All Light to normal")
+    end
+end
 
+lighting:GetPropertyChangedSignal("FogEnd"):Connect(OpenLight)
