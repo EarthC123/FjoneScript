@@ -1,2 +1,2 @@
 # FjoneScript
-Some Self Made Self Use Open Source Script for fun :D
+Some Self Use Open Source Script for fun :D
