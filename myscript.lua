@@ -718,7 +718,14 @@ skillcheckupdate.OnClientInvoke = function(...)
 end
 print("Fjone: Hooking SkillcheckUpdate Success...")
 
+
 --open all the light
+local function getsiblings(part)
+    if part.Parent then
+        return part.Parent:GetChildren()
+    end
+end
+
 local function setLightRange(root, range)
     if not root then return end
     for _, inst in ipairs(root:GetDescendants()) do
