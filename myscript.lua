@@ -724,6 +724,11 @@ local function setLightRange(root, range)
     for _, inst in ipairs(root:GetDescendants()) do
         if inst:IsA("Light") then
             inst.Range = range
+            for _, lightpart in ipairs(getsiblings(inst.Parent)) do
+                if lightpart.Material == Enum.Material.Neon then
+                    lightpart.Color = Color3.fromRGB(255, 255, 204)
+                end
+            end
         end
     end
 end
@@ -738,7 +743,7 @@ local function OpenLight()
         lighting.FogEnd=250
         local roomlights=roomentity:WaitForChild("Lights")
         --open all the light
-        setLightRange(roomlights, 60)
+        setLightRange(roomlights, 45)
         print("set All Light to normal")
     end
 end
