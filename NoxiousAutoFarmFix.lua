@@ -5,6 +5,10 @@ local localcharacter = plr.Character or plr.CharacterAdded:Wait()
 local plrgui = plr:WaitForChild("PlayerGui")
 local localroot = localcharacter:WaitForChild("HumanoidRootPart")
 
+function howfar(player, cframe)
+    return (player.Character.HumanoidRootPart.Position - cframe.Position).Magnitude
+end
+
 function getMap()
 	if map and map.Parent then
 		return map
@@ -90,12 +94,36 @@ function teleportplr(cf)
 	workspace.Gravity = 196.2
 end
 
+--get all sprout tantacle cframes
+function getSproutTantacleCFrames()
+	local cframes = {}
+	local currentMap = getMap()
+	if not currentMap then
+		return cframes
+	end
+
+	local freeArea = currentMap:FindFirstChild("FreeArea")
+	if not freeArea then
+		return cframes
+	end
+
+	for _, sproutTantacle in ipairs(freeArea:GetChildren()) do
+		if sproutTantacle.Name == "SproutTendril" and sproutTantacle:IsA("Model") then
+			table.insert(cframes, sproutTantacle:GetPivot())
+		end
+	end
+
+	return cframes
+end
+
 task.spawn(
 function()
 	while true do
 		if getMap() then
 			--fix when spoted, there is a chance still doing machine
 			local monstersFolder = getMap():FindFirstChild("Monsters")
+			local playerposition = localcharacter.HumanoidRootPart.Position
+			local fakeElevatorPosition = getFakeElevatorPosition()
 			if monstersFolder then
 				for _, monster in monstersFolder:GetChildren() do
 					if monster:FindFirstChild("ChasingValue") and monster.ChasingValue.Value == localcharacter then
@@ -104,12 +132,23 @@ function()
 				end
 			end
 			--fix tp to elevator front when fall out of map
-			local playerposition = localcharacter.HumanoidRootPart.Position
 			if not clientinvalidposdetect(playerposition) then
 			    print("x,y,z=",playerposition.X,playerposition.Y,playerposition.Z)
-				local fakeElevatorPosition = getFakeElevatorPosition()
 				if fakeElevatorPosition then
 					teleportplr(CFrame.new(fakeElevatorPosition))
+				end
+			end
+			--tp away if the player gets too close to any sprout tantacle
+			for index, sproutTantacleCFrame in ipairs(getSproutTantacleCFrames()) do
+				local sproutDistance = howfar(plr, sproutTantacleCFrame)
+				if sproutDistance <=20 then
+					print("sproutDistance[" .. index .. "]:", sproutDistance)
+				end
+				if sproutDistance <= 5 then
+					if fakeElevatorPosition then
+						teleportplr(CFrame.new(fakeElevatorPosition))
+					end
+					break
 				end
 			end
 		end
