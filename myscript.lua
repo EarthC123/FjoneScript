@@ -679,7 +679,9 @@ local skillcheckupdate = replicated.Events:WaitForChild("SkillcheckUpdate")
 local oriskillcheckupdate = nil
 print("Fjone: try Hooking SkillcheckUpdate...")
 while oriskillcheckupdate == nil do
-    oriskillcheckupdate = getcallbackvalue(skillcheckupdate, "OnClientInvoke")
+    if getcallbackvalue ~= nil then
+        oriskillcheckupdate = getcallbackvalue(skillcheckupdate, "OnClientInvoke")
+    end
     task.wait(1)
 end
 
