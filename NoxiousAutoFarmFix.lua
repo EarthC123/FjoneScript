@@ -5,9 +5,6 @@ local localcharacter = plr.Character or plr.CharacterAdded:Wait()
 local plrgui = plr:WaitForChild("PlayerGui")
 local localroot = localcharacter:WaitForChild("HumanoidRootPart")
 
--- (Auto Struggle) Thx to Ali_hhjjj from riddance club 
-loadstring(game:HttpGet("https://raw.githubusercontent.com/alihusam078588-web/Twilight-zone-loader/refs/heads/main/auto%20struggle.lua"))()
-
 function howfar(player, cframe)
     return (player.Character.HumanoidRootPart.Position - cframe.Position).Magnitude
 end
@@ -160,3 +157,6 @@ function()
 end
 )
 
+
+-- (Auto Struggle) Thx to Ali_hhjjj from riddance club 
+loadstring(game:HttpGet("https://raw.githubusercontent.com/alihusam078588-web/Twilight-zone-loader/refs/heads/main/auto%20struggle.lua"))()
