@@ -121,6 +121,19 @@ local function Fjone_HighLight(room, foldername)
 	dir.ChildAdded:Connect(onAdded)
 end
 
+local function highlightmonstereffect(parent)
+    local highlighteffect = Instance.new("Highlight", parent)
+    highlighteffect.Name = "FjoneHighlight"
+    highlighteffect.OutlineColor = Color3.fromRGB(178,34,34)
+    highlighteffect.FillColor = Color3.fromRGB(178,34,34)
+    highlighteffect.OutlineTransparency=0.3
+    highlighteffect.FillTransparency = 0.7
+    activeHighlights[highlighteffect] = {
+        FillTransparency = highlighteffect.FillTransparency,
+        OutlineTransparency = highlighteffect.OutlineTransparency,
+    }
+end
+
 --highlight blot hands
 --workspace.CurrentRoom.AstroMap.BlotHandZone_2.BlotHand_L
 local function highlightblothand(hand)
@@ -130,16 +143,7 @@ local function highlightblothand(hand)
 	if isHighlight ~= nil then
 	    return
 	end
-    local highlighteffect = Instance.new("Highlight", arm)
-    highlighteffect.Name = "FjoneHighlight"
-    highlighteffect.OutlineColor = Color3.fromRGB(178,34,34)
-	highlighteffect.FillColor = Color3.fromRGB(178,34,34)
-	highlighteffect.OutlineTransparency=0.3
-	highlighteffect.FillTransparency = 0.7
-    activeHighlights[highlighteffect] = {
-		FillTransparency = highlighteffect.FillTransparency,
-		OutlineTransparency = highlighteffect.OutlineTransparency,
-	}
+	highlightmonstereffect(arm)
 end
 
 local function highlightblotzone(entity)
@@ -155,6 +159,29 @@ local function highlightblotzone(entity)
     end
 end
 
+--highlight Bassie flower trap and remote attack
+--workspace.CurrentRoom.EasterMap2["WiltedFlowerZone_Zone_1774166685.0701213"]
+--workspace.CurrentRoom.EasterMap2["BassieChunkSlowZone_Zone_1774167475.72304"]
+--workspace.CurrentRoom.VeeMap.FlowerField
+--workspace.Small_Vines_Thick_Wheels
+--workspace.HugeSpike_Circular_Attack
+local function highlightBassieFlowerTrap(entity)
+    if entity.Name == "FlowerField" then
+        print("find Bassie flower trap "..entity.Name)
+        highlightmonstereffect(entity)
+    end
+end
+
+local function highlightBassieRemoteAttack(entity)
+    if entity.Name == "Small_Vines_Thick_Wheels" then
+    -- second phase Spike esp can dramatically slow game, So remove it.
+    -- or entity.Name == "HugeSpike_Circular_Attack" then
+        --print("find Bassie Remote Attack "..entity.Name)
+        highlightmonstereffect(entity)
+    end
+end
+workspace.ChildAdded:Connect(highlightBassieRemoteAttack)
+
 --Highlight room entity
 local roomdir=workspace.CurrentRoom
 local roomentity=roomdir:FindFirstChildOfClass("Model")
@@ -166,6 +193,7 @@ local function onRoomGen(roominstance)
         highlightblotzone(instance)
     end
     roominstance.ChildAdded:Connect(highlightblotzone)
+    roominstance.ChildAdded:Connect(highlightBassieFlowerTrap)
 	Fjone_HighLight(roominstance,"Monsters")
 	Fjone_HighLight(roominstance,"Generators")
 	Fjone_HighLight(roominstance,"Items")
@@ -386,7 +414,7 @@ end
 
 local ToggleButton = Instance.new("TextButton")
 ToggleButton.Size = UDim2.new(0, 100, 0, 40)
-ToggleButton.Position = UDim2.new(0.9, -50, 0.4, 45)
+ToggleButton.Position = UDim2.new(0.9, -50, 0.2, 45)
 ToggleButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
 ToggleButton.Text = "Decoy: OFF"
 ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -415,6 +443,7 @@ userinputservice.InputBegan:Connect(function(inputobj, processevent)
     end
 end)
 --]]
+
 
 --infinite stamina
 local sprintevent = replicated.Events:WaitForChild("SprintEvent")
@@ -722,14 +751,13 @@ skillcheckupdate.OnClientInvoke = function(...)
 end
 print("Fjone: Hooking SkillcheckUpdate Success...")
 
-
---open all the light
 local function getsiblings(part)
     if part.Parent then
         return part.Parent:GetChildren()
     end
 end
 
+--open all the light
 local function setLightRange(root, range)
     if not root then return end
     for _, inst in ipairs(root:GetDescendants()) do
