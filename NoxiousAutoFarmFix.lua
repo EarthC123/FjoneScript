@@ -5,8 +5,12 @@ local localcharacter = plr.Character or plr.CharacterAdded:Wait()
 local plrgui = plr:WaitForChild("PlayerGui")
 local localroot = localcharacter:WaitForChild("HumanoidRootPart")
 
-function howfar(player, cframe)
-    return (player.Character.HumanoidRootPart.Position - cframe.Position).Magnitude
+function howfar(cframe1, cframe2)
+    if cframe1 == plr then
+        return (cframe1.Character.HumanoidRootPart.Position - cframe2.Position).Magnitude
+    else
+        return (cframe1.Position - cframe2.Position).Magnitude
+    end
 end
 
 function getMap()
@@ -45,13 +49,14 @@ function getModelCenter(model)
 end
 
 -- Function to get Fake Elevator Position
-function getFakeElevatorPosition()
+function getFakeElevatorCFrame()
 	local freeArea = getMap():FindFirstChild("FreeArea")
 	if freeArea then
 		local fakeElevator = freeArea:FindFirstChild("FakeElevator")
 		if fakeElevator and fakeElevator:IsA("Model") then
-			local center = getModelCenter(fakeElevator)
-			return center
+			--local center = getModelCenter(fakeElevator)
+			--return center
+			return fakeElevator:GetPivot()+Vector3.new(0,2,0)
 		end
 	end
 end
@@ -95,7 +100,7 @@ function teleportplr(cf)
 end
 
 --get all sprout tantacle cframes
-function getSproutTantacleCFrames()
+function getDangerEntityCFrames()
 	local cframes = {}
 	local currentMap = getMap()
 	if not currentMap then
@@ -112,10 +117,15 @@ function getSproutTantacleCFrames()
 			table.insert(cframes, sproutTantacle:GetPivot())
 		end
 	end
-
+	for _,BassieRange in ipairs(currentMap:GetChildren()) do
+	    if BassieRange:IsA("Part") and (string.find(BassieRange.Name, "WiltedFlowerZone") or string.find(BassieRange.Name, "BassieChunkSlowZone")) then
+	        table.insert(cframes, BassieRange.CFrame)
+	    end
+	end
 	return cframes
 end
 
+print("Fjone: everything ok")
 task.spawn(
 function()
 	while true do
@@ -123,7 +133,8 @@ function()
 			--fix when spoted, there is a chance still doing machine
 			local monstersFolder = getMap():FindFirstChild("Monsters")
 			local playerposition = localcharacter.HumanoidRootPart.Position
-			local fakeElevatorPosition = getFakeElevatorPosition()
+			local fakeElevatorCFrame = getFakeElevatorCFrame()
+			local shoulddosafetp = false
 			if monstersFolder then
 				for _, monster in monstersFolder:GetChildren() do
 					if monster:FindFirstChild("ChasingValue") and monster.ChasingValue.Value == localcharacter then
@@ -134,23 +145,43 @@ function()
 			--fix tp to elevator front when fall out of map
 			if not clientinvalidposdetect(playerposition) then
 			    print("x,y,z=",playerposition.X,playerposition.Y,playerposition.Z)
-				if fakeElevatorPosition then
-					teleportplr(CFrame.new(fakeElevatorPosition))
-				end
+				shoulddosafetp = true
 			end
 			--tp away if the player gets too close to any sprout tantacle
-			for index, sproutTantacleCFrame in ipairs(getSproutTantacleCFrames()) do
-				local sproutDistance = howfar(plr, sproutTantacleCFrame)
-				if sproutDistance <=20 then
-					print("sproutDistance[" .. index .. "]:", sproutDistance)
+			local dangerentity = getDangerEntityCFrames()
+			for index, dangerEntityCFrame in ipairs(dangerentity) do
+				local dangerDistance = howfar(plr, dangerEntityCFrame)
+				if dangerDistance <=20 then
+					print("dangerDistance[" .. index .. "]:", dangerDistance)
 				end
-				if sproutDistance <= 5 then
-					if fakeElevatorPosition then
-						teleportplr(CFrame.new(fakeElevatorPosition))
-					end
+				if dangerDistance <= 5 then
+					shoulddosafetp = true
 					break
 				end
 			end
+			if shoulddosafetp and fakeElevatorCFrame then
+			    local fakeElevatorCFrameArray = {
+                    ["center"]=fakeElevatorCFrame,
+                    ["corner1"]=fakeElevatorCFrame + Vector3.new(13, 0, 15),
+                    ["corner2"]=fakeElevatorCFrame + Vector3.new(13, 0, -15),
+                    ["corner3"]=fakeElevatorCFrame + Vector3.new(-15, 0, 15),
+                    ["corner4"]=fakeElevatorCFrame + Vector3.new(-15, 0, -15)
+                }
+                for _, corner in pairs(fakeElevatorCFrameArray) do
+                    local isSafe = true
+                    for _, entity in pairs(dangerentity) do
+                        if howfar(corner, entity)<=5 then
+                        -- position too close to danger is invalid
+                            isSafe=false
+                            break
+                        end
+                    end
+                    if isSafe then
+                        teleportplr(corner)
+                        break
+                    end
+                end
+            end
 		end
 		task.wait(1/15)
 	end
