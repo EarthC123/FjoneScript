@@ -70,7 +70,7 @@ function getFakeElevatorCFrame()
 		    end
 			--local center = getModelCenter(fakeElevator)
 			--return center
-			return fakeElevator:GetPivot()+Vector3.new(0,2,0)
+			return fakeElevator:GetPivot()+Vector3.new(0,3,0)
 		end
 	end
 end
