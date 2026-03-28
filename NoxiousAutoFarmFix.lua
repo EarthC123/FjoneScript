@@ -4,6 +4,12 @@ local plr = plrsrv.LocalPlayer
 local localcharacter = plr.Character or plr.CharacterAdded:Wait()
 local plrgui = plr:WaitForChild("PlayerGui")
 local localroot = localcharacter:WaitForChild("HumanoidRootPart")
+local panic=workspace:WaitForChild("Info"):WaitForChild("Panic")
+
+--workspace.Info.Panic
+function isPanic()
+    return panic.Value
+end
 
 function howfar(cframe1, cframe2)
     if cframe1 == plr then
@@ -64,7 +70,7 @@ function getFakeElevatorCFrame()
 		    end
 			--local center = getModelCenter(fakeElevator)
 			--return center
-			return fakeElevator:GetPivot()+Vector3.new(0,3,0)
+			return fakeElevator:GetPivot()+Vector3.new(0,2,0)
 		end
 	end
 end
@@ -168,7 +174,7 @@ function()
 					break
 				end
 			end
-			if shoulddosafetp and fakeElevatorCFrame then
+			if not isPanic() and shoulddosafetp and fakeElevatorCFrame then
 			    local fakeElevatorCFrameArray = {
                     ["center"]=fakeElevatorCFrame,
                     ["corner1"]=fakeElevatorCFrame + Vector3.new(13, 0, 15),
