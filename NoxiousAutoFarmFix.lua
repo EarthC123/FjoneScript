@@ -56,10 +56,10 @@ function getFakeElevatorCFrame()
 	if freeArea then
 		local fakeElevator = freeArea:FindFirstChild("FakeElevator")
 		if fakeElevator and fakeElevator:IsA("Model") then
-		    if fakeElevator:FindFirstChild("Base").CanCollide == false then
+		    if fakeElevator:FindFirstChild("Base") and fakeElevator.Base.CanCollide == false then
 		        fakeElevator.Base.CanCollide = true
 		    end
-		    if fakeElevator:FindFirstChild("Door"):FindFirstChild("NoClip_Collider") then
+		    if fakeElevator:FindFirstChild("Door") and fakeElevator.Door:FindFirstChild("NoClip_Collider") then
 		        fakeElevator.Door.NoClip_Collider:Destroy()
 		    end
 			--local center = getModelCenter(fakeElevator)
