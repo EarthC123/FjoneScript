@@ -49,11 +49,19 @@ function getModelCenter(model)
 end
 
 -- Function to get Fake Elevator Position
+--workspace.CurrentRoom.StoryboardMap.FreeArea.FakeElevator.Base
+--workspace.CurrentRoom.AquariumMap.FreeArea.FakeElevator.Door.NoClip_Collider
 function getFakeElevatorCFrame()
 	local freeArea = getMap():FindFirstChild("FreeArea")
 	if freeArea then
 		local fakeElevator = freeArea:FindFirstChild("FakeElevator")
 		if fakeElevator and fakeElevator:IsA("Model") then
+		    if fakeElevator:FindFirstChild("Base").CanCollide == false then
+		        fakeElevator.Base.CanCollide = true
+		    end
+		    if fakeElevator:FindFirstChild("Door"):FindFirstChild("NoClip_Collider") then
+		        fakeElevator.Door.NoClip_Collider:Destroy()
+		    end
 			--local center = getModelCenter(fakeElevator)
 			--return center
 			return fakeElevator:GetPivot()+Vector3.new(0,2,0)
