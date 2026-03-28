@@ -125,9 +125,9 @@ function getDangerEntityCFrames()
 			table.insert(cframes, sproutTantacle:GetPivot())
 		end
 	end
-	for _,BassieRange in ipairs(currentMap:GetChildren()) do
-	    if BassieRange:IsA("Part") and (string.find(BassieRange.Name, "WiltedFlowerZone") or string.find(BassieRange.Name, "BassieChunkSlowZone")) then
-	        table.insert(cframes, BassieRange.CFrame)
+	for _,BassieRange in ipairs(workspace:GetChildren()) do
+	    if BassieRange:IsA("Model") and (BassieRange.Name=="Small_Vines_Thick_Wheels" or BassieRange.Name=="HugeSpike_Circular_Attack") then
+	        table.insert(cframes, BassieRange:GetPivot())
 	    end
 	end
 	return cframes
@@ -147,6 +147,7 @@ function()
 				for _, monster in monstersFolder:GetChildren() do
 					if monster:FindFirstChild("ChasingValue") and monster.ChasingValue.Value == localcharacter then
 						forceStop()
+						shoulddosafetp = true
 					end
 				end
 			end
@@ -178,7 +179,7 @@ function()
                 for _, corner in pairs(fakeElevatorCFrameArray) do
                     local isSafe = true
                     for _, entity in pairs(dangerentity) do
-                        if howfar(corner, entity)<=5 then
+                        if howfar(corner, entity)<=10 then
                         -- position too close to danger is invalid
                             isSafe=false
                             break
