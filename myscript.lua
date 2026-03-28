@@ -791,8 +791,6 @@ lighting:GetPropertyChangedSignal("FogEnd"):Connect(OpenLight)
 
 
 -- auto struggle from riddance club
-local replicated = game:GetService("ReplicatedStorage")
-
 local TwistedSquirmGrabremote = replicated:WaitForChild("Events"):WaitForChild("TwistedSquirmGrab")
 
 local autostrugglerunning = false
