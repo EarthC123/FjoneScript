@@ -113,6 +113,13 @@ function teleportplr(cf)
 	workspace.Gravity = 196.2
 end
 
+--有些时候玩家会在操作机器时被tp走，但却并没有停止提取，这就很糟，假设那个时候正好sprout的触手在那个机器旁，这样就一定会受伤
+--workspace.CurrentRoom.GiftShop.Generators:GetChildren()[6].Stats.ActivePlayer==localplayer。
+--workspace.InGamePlayers.sysadmin05fjone.Decoding==generator
+--如果玩家在decoding，但是却和目标电机的距离过远，就一定是假传送
+
+--另一种可能性：依旧是电机那里生成了触手，然后我检测到了进行了传送，但是只是把人送假电梯，真身还在被打。。，所以所有的safetp都应该同时做一次forcestop。
+
 --get all sprout tantacle cframes
 function getDangerEntityCFrames()
 	local cframes = {}
@@ -152,7 +159,6 @@ function()
 			if monstersFolder then
 				for _, monster in monstersFolder:GetChildren() do
 					if monster:FindFirstChild("ChasingValue") and monster.ChasingValue.Value == localcharacter then
-						forceStop()
 						shoulddosafetp = true
 					end
 				end
@@ -169,7 +175,7 @@ function()
 				if dangerDistance <=20 then
 					print("dangerDistance[" .. index .. "]:", dangerDistance)
 				end
-				if dangerDistance <= 5 then
+				if dangerDistance <= 10 then
 					shoulddosafetp = true
 					break
 				end
@@ -193,6 +199,7 @@ function()
                     end
                     if isSafe then
                         teleportplr(corner)
+                        forceStop()
                         break
                     end
                 end
