@@ -1,10 +1,14 @@
 local map
 local plrsrv = game:GetService("Players")
 local plr = plrsrv.LocalPlayer
+local starterGui = game:GetService("StarterGui")
 local localcharacter = plr.Character or plr.CharacterAdded:Wait()
 local plrgui = plr:WaitForChild("PlayerGui")
 local localroot = localcharacter:WaitForChild("HumanoidRootPart")
 local panic=workspace:WaitForChild("Info"):WaitForChild("Panic")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local fjonestart = true
 
 --workspace.Info.Panic
 function isPanic()
@@ -116,9 +120,9 @@ end
 --有些时候玩家会在操作机器时被tp走，但却并没有停止提取，这就很糟，假设那个时候正好sprout的触手在那个机器旁，这样就一定会受伤
 --workspace.CurrentRoom.GiftShop.Generators:GetChildren()[6].Stats.ActivePlayer==localplayer。
 --workspace.InGamePlayers.sysadmin05fjone.Decoding==generator
---如果玩家在decoding，但是却和目标电机的距离过远，就一定是假传送
+--如果玩家在decoding，但是却和目标电机的距离过远，就一定是假传送(待办)
 
---另一种可能性：依旧是电机那里生成了触手，然后我检测到了进行了传送，但是只是把人送假电梯，真身还在被打。。，所以所有的safetp都应该同时做一次forcestop。
+--另一种可能性：依旧是电机那里生成了触手，然后我检测到了进行了传送，但是只是把人送假电梯，真身还在被打。。，所以所有的safetp都应该同时做一次forcestop。(done)
 
 --get all sprout tantacle cframes
 function getDangerEntityCFrames()
@@ -146,11 +150,10 @@ function getDangerEntityCFrames()
 	return cframes
 end
 
-print("Fjone: everything ok")
 task.spawn(
 function()
 	while true do
-		if getMap() then
+		if fjonestart and getMap() then
 			--fix when spoted, there is a chance still doing machine
 			local monstersFolder = getMap():FindFirstChild("Monsters")
 			local playerposition = localcharacter.HumanoidRootPart.Position
@@ -213,3 +216,186 @@ end
 
 -- (Auto Struggle) Thx to Ali_hhjjj from riddance club 
 loadstring(game:HttpGet("https://raw.githubusercontent.com/alihusam078588-web/Twilight-zone-loader/refs/heads/main/auto%20struggle.lua"))()
+
+
+-- UI
+pcall(function()
+    plrgui.FjoneToggleUI:Destroy()
+end)
+
+local fjoneui = Instance.new("ScreenGui", plrgui)
+fjoneui.Name = "FjoneToggleUI"
+fjoneui.ResetOnSpawn = false
+
+local function CreateToggle(config)
+    config = config or {}
+
+    local Text = config.Text or "Toggle"
+    local Default = config.Default or false
+    local Position = config.Position or UDim2.fromScale(0.8, 0.5)
+    local Size = config.Size or UDim2.fromScale(0.25, 0.12)
+    local Callback = config.Callback or function() end
+
+    local CornerRadius = config.CornerRadius or 0.08
+    local SwitchCornerRadius = config.SwitchCornerRadius or 1
+    local state = Default
+    
+    local function createUiGradient(parent)
+        local UIGradient= Instance.new("UIGradient", parent)
+        UIGradient.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(
+                0,
+                Color3.fromRGB(140, 140, 140)
+            ),
+            ColorSequenceKeypoint.new(
+                1,
+                Color3.fromRGB(81, 81, 81)
+            )
+        })
+        UIGradient.Rotation = 90
+    end
+    
+    --with border
+    local MainBorder = Instance.new("Frame")
+    MainBorder.Parent = fjoneui
+    MainBorder.AnchorPoint = Vector2.new(0.5, 0.5)
+    MainBorder.Position = Position
+    MainBorder.Size = Size
+    MainBorder.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    MainBorder.BorderSizePixel = 0
+    Instance.new("UICorner", MainBorder).CornerRadius = UDim.new(CornerRadius, 0)
+    
+    local Main = Instance.new("Frame")
+    Main.Parent = MainBorder
+    Main.AnchorPoint = Vector2.new(0.5, 0.5)
+    Main.Position = UDim2.fromScale(0.5, 0.5)
+    Main.Size = UDim2.fromScale(0.93, 0.78)
+    Main.BackgroundColor3 = Color3.fromRGB(112, 112, 112)
+    Main.BorderSizePixel = 0
+    Instance.new("UICorner", Main).CornerRadius = UDim.new(CornerRadius, 0)
+    createUiGradient(Main)
+
+    local Label = Instance.new("TextLabel")
+    Label.Parent = Main
+    Label.BackgroundTransparency = 1
+    Label.Position = UDim2.fromScale(0.05, 0)
+    Label.Size = UDim2.fromScale(0.6, 1)
+    Label.Text = Text
+    Label.Font = Enum.Font.GothamBold
+    Label.TextScaled = true
+    Label.TextColor3 = Color3.fromRGB(255,255,255)
+    
+    --with border
+    local SwitchBorder = Instance.new("Frame")
+    SwitchBorder.Parent = Main
+    SwitchBorder.Size = UDim2.fromScale(0.25, 0.55)
+    SwitchBorder.Position = UDim2.fromScale(0.7, 0.225)
+    SwitchBorder.BackgroundColor3 = Color3.fromRGB(0,0,0)
+    SwitchBorder.BorderSizePixel = 0
+    Instance.new("UICorner", SwitchBorder).CornerRadius = UDim.new(1,0)
+
+    --background
+    local Switch = Instance.new("Frame")
+    Switch.Parent = SwitchBorder
+    Switch.Size = UDim2.fromScale(0.8, 0.7)
+    Switch.AnchorPoint = Vector2.new(0.5, 0.5)
+    Switch.Position = UDim2.fromScale(0.5, 0.5)
+    Switch.BackgroundColor3 = Color3.fromRGB(112,112,112)
+    Switch.BorderSizePixel = 0
+
+    Instance.new("UICorner", Switch).CornerRadius = UDim.new(1, 0)
+    createUiGradient(Switch)
+
+    --knob
+    local Knob = Instance.new("Frame")
+    Knob.Parent = Switch
+    Knob.Size = UDim2.fromScale(0.4, 0.9)
+    Knob.Position = state and UDim2.fromScale(0.6,0.05) or UDim2.fromScale(0.03,0.05)
+    Knob.BackgroundColor3 = state and Color3.fromRGB(100,255,100) or Color3.fromRGB(255,100,100)
+    Knob.BorderSizePixel = 0
+
+    Instance.new("UICorner", Knob).CornerRadius = UDim.new(1,0)
+
+    --button
+    local Button = Instance.new("TextButton")
+    Button.Parent = Switch
+    Button.Size = UDim2.fromScale(1,1)
+    Button.BackgroundTransparency = 1
+    Button.Text = ""
+
+    Button.MouseButton1Click:Connect(function()
+        state = not state
+
+        TweenService:Create(Knob, TweenInfo.new(0.25, Enum.EasingStyle.Quart), {
+            Position = state and UDim2.fromScale(0.6,0.05) or UDim2.fromScale(0.03,0.05),
+            BackgroundColor3 = state and Color3.fromRGB(100,255,100) or Color3.fromRGB(255,100,100)
+        }):Play()
+
+        Callback(state)
+    end)
+
+    --dragable
+    local dragging = false
+    local dragStart
+    local frameStart
+
+    Main.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            frameStart = MainBorder.Position
+        end
+    end)
+
+    Main.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = false
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and (
+            input.UserInputType == Enum.UserInputType.MouseMovement
+            or input.UserInputType == Enum.UserInputType.Touch
+        ) then
+            local delta = input.Position - dragStart
+            MainBorder.Position = UDim2.new(
+                frameStart.X.Scale,
+                frameStart.X.Offset + delta.X,
+                frameStart.Y.Scale,
+                frameStart.Y.Offset + delta.Y
+            )
+        end
+    end)
+
+    return {
+        Set = function(v)
+            state = v
+            Knob.Position = v and UDim2.fromScale(0.42,0.1) or UDim2.fromScale(0.03,0.1)
+            Knob.BackgroundColor3 = v and Color3.fromRGB(100,255,100) or Color3.fromRGB(255,100,100)
+        end,
+        Get = function()
+            return state
+        end,
+        Destroy = function()
+            Main:Destroy()
+        end
+    }
+end
+
+local autoToggle = CreateToggle({
+    Text = "Fjone\nAutofarm Fix",
+    Default = fjonestart,
+    Position = UDim2.fromScale(0.78, 0.55),
+    Size = UDim2.fromScale(0.18, 0.12),
+    CornerRadius = 0.3,
+
+    Callback = function(on)
+        print("Fjone AutofarmFix:", on)
+        fjonestart= on
+    end
+})
+
+print("Fjone: everything ok")
