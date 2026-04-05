@@ -8,7 +8,7 @@ local localroot = localcharacter:WaitForChild("HumanoidRootPart")
 local panic=workspace:WaitForChild("Info"):WaitForChild("Panic")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
-local fjonestart = true
+fjonestart = true
 
 --workspace.Info.Panic
 function isPanic()
