@@ -66,11 +66,15 @@ function getFakeElevatorCFrame()
 	if freeArea then
 		local fakeElevator = freeArea:FindFirstChild("FakeElevator")
 		if fakeElevator and fakeElevator:IsA("Model") then
+		    --unable finnaly notice new fake elevator change
 		    if fakeElevator:FindFirstChild("Base") and fakeElevator.Base.CanCollide == false then
 		        fakeElevator.Base.CanCollide = true
 		    end
-		    if fakeElevator:FindFirstChild("Door") and fakeElevator.Door:FindFirstChild("NoClip_Collider") then
-		        fakeElevator.Door.NoClip_Collider:Destroy()
+		    if fakeElevator:FindFirstChild("Door") and fakeElevator.Door:FindFirstChild("NoClip_Collider") and fakeElevator.Door.NoClip_Collider.CanCollide == true then
+		        --unable must change this part size.y to 5 and then move 0,-17,0, so Id better not change it
+		        --fakeElevator.Door.NoClip_Collider.CFrame += Vector3.new(0,-27,0)
+		        fakeElevator.Door.NoClip_Collider.CanTouch=false
+		        fakeElevator.Door.NoClip_Collider.CanCollide=false
 		    end
 			--local center = getModelCenter(fakeElevator)
 			--return center
