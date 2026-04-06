@@ -214,7 +214,9 @@ local function DeBooAllMachine(generatorfolder, connie)
         end
         local statsfolder = generator:FindFirstChild("Stats")
         local connieboo = statsfolder and statsfolder:FindFirstChild("Connie")
-        connieboo.Value = false
+        if connieboo then
+            connieboo.Value = false
+        end
     end
 end
 
