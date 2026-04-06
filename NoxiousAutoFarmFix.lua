@@ -82,6 +82,7 @@ function getFakeElevatorCFrame()
 			return fakeElevator:GetPivot()+Vector3.new(0,3,0)
 		end
 	end
+	return nil
 end
 
 function clientinvalidposdetect(playerposition)
@@ -155,6 +156,30 @@ function getDangerEntityCFrames()
 	return cframes
 end
 
+local function dot(ax, ay, bx, by)
+    return ax * bx + ay * by
+end
+
+local function pointInParallelogram(p, A, B, D)
+    local APx, APy = p.X - A.X, p.Z - A.Z
+    local ABx, ABy = B.X - A.X, B.Z - A.Z
+    local ADx, ADy = D.X - A.X, D.Z - A.Z
+
+    local dotAB = dot(APx, APy, ABx, ABy)
+    local dotAD = dot(APx, APy, ADx, ADy)
+
+    return dotAB >= 0 and dotAB <= dot(ABx, ABy, ABx, ABy)
+        and dotAD >= 0 and dotAD <= dot(ADx, ADy, ADx, ADy)
+end
+
+function isplayerinfake(plrposition, fakecframeArray)
+    if fakecframeArray and plrposition then
+        return pointInParallelogram(plrposition, fakecframeArray["corner1"].Position, fakecframeArray["corner2"].Position, fakecframeArray["corner3"].Position)
+    else
+        return false
+    end
+end
+
 task.spawn(
 function()
 	while true do
@@ -163,12 +188,30 @@ function()
 			local monstersFolder = getMap():FindFirstChild("Monsters")
 			local playerposition = localcharacter.HumanoidRootPart.Position
 			local fakeElevatorCFrame = getFakeElevatorCFrame()
+			local fakeElevatorCFrameArray = nil
 			local shoulddosafetp = false
+			
+			if fakeElevatorCFrame then
+			    fakeElevatorCFrameArray = {
+                    ["center"]=fakeElevatorCFrame,
+                    ["corner1"]=fakeElevatorCFrame + Vector3.new(13, 0, 15),
+                    ["corner2"]=fakeElevatorCFrame + Vector3.new(13, 0, -15),
+                    ["corner3"]=fakeElevatorCFrame + Vector3.new(-15, 0, 15),
+                    ["corner4"]=fakeElevatorCFrame + Vector3.new(-15, 0, -15)
+                }
+            end
 			--boxten function again! :D so remove this force tp
 			if monstersFolder then
 				for _, monster in monstersFolder:GetChildren() do
 					if monster:FindFirstChild("ChasingValue") and monster.ChasingValue.Value == localcharacter then
-						shoulddosafetp = false
+						task.wait(0.1)
+						if not isplayerinfake(playerposition,fakeElevatorCFrameArray) then
+							print("Fjone: not in fake")
+							shoulddosafetp = true
+						else
+							print("Fjone: in fake")
+							shoulddosafetp = false
+						end
 						forceStop()
 					end
 				end
@@ -191,13 +234,6 @@ function()
 				end
 			end
 			if not isPanic() and shoulddosafetp and fakeElevatorCFrame then
-			    local fakeElevatorCFrameArray = {
-                    ["center"]=fakeElevatorCFrame,
-                    ["corner1"]=fakeElevatorCFrame + Vector3.new(13, 0, 15),
-                    ["corner2"]=fakeElevatorCFrame + Vector3.new(13, 0, -15),
-                    ["corner3"]=fakeElevatorCFrame + Vector3.new(-15, 0, 15),
-                    ["corner4"]=fakeElevatorCFrame + Vector3.new(-15, 0, -15)
-                }
                 for _, corner in pairs(fakeElevatorCFrameArray) do
                     local isSafe = true
                     for _, entity in pairs(dangerentity) do
