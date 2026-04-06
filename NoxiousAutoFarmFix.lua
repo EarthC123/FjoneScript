@@ -188,7 +188,9 @@ local function BooAllMachine(generatorfolder)
     for _, generator in generatorfolder:GetChildren() do
         local statsfolder = generator:FindFirstChild("Stats")
         local booconnie = statsfolder and statsfolder:FindFirstChild("Connie")
-        booconnie.Value = true
+        if booconnie then
+            booconnie.Value = true
+        end
     end
 end
 
@@ -201,7 +203,7 @@ local function DeBooAllMachine(generatorfolder, connie)
     local isghost = false
     if connie then
         local wandering = connie:FindFirstChild("Wandering")
-        if not wandering.Value then
+        if wandering and not wandering.Value then
             isghost = true
         end
     end
