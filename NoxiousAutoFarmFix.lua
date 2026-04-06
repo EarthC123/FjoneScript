@@ -8,7 +8,7 @@ local localroot = localcharacter:WaitForChild("HumanoidRootPart")
 local panic=workspace:WaitForChild("Info"):WaitForChild("Panic")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
-fjonestart = true
+local fjonestart = true
 
 --workspace.Info.Panic
 function isPanic()
@@ -66,18 +66,19 @@ function getFakeElevatorCFrame()
 	if freeArea then
 		local fakeElevator = freeArea:FindFirstChild("FakeElevator")
 		if fakeElevator and fakeElevator:IsA("Model") then
-		    --unable finnaly notice new fake elevator change
+		    --[[
+		    --unable finnaly notice new fake elevator change, so remove this.
 		    if fakeElevator:FindFirstChild("Base") and fakeElevator.Base.CanCollide == false then
 		        fakeElevator.Base.CanCollide = true
 		    end
 		    if fakeElevator:FindFirstChild("Door") and fakeElevator.Door:FindFirstChild("NoClip_Collider") and fakeElevator.Door.NoClip_Collider.CanCollide == true then
-		        --unable must change this part size.y to 5 and then move 0,-17,0, so Id better not change it
 		        --fakeElevator.Door.NoClip_Collider.CFrame += Vector3.new(0,-27,0)
 		        fakeElevator.Door.NoClip_Collider.CanTouch=false
 		        fakeElevator.Door.NoClip_Collider.CanCollide=false
 		    end
 			--local center = getModelCenter(fakeElevator)
 			--return center
+			--]]
 			return fakeElevator:GetPivot()+Vector3.new(0,3,0)
 		end
 	end
@@ -163,6 +164,8 @@ function()
 			local playerposition = localcharacter.HumanoidRootPart.Position
 			local fakeElevatorCFrame = getFakeElevatorCFrame()
 			local shoulddosafetp = false
+			--[[
+			boxten function again! :D so remove this force tp
 			if monstersFolder then
 				for _, monster in monstersFolder:GetChildren() do
 					if monster:FindFirstChild("ChasingValue") and monster.ChasingValue.Value == localcharacter then
@@ -170,19 +173,20 @@ function()
 					end
 				end
 			end
+			--]]
 			--fix tp to elevator front when fall out of map
 			if not clientinvalidposdetect(playerposition) then
 			    print("x,y,z=",playerposition.X,playerposition.Y,playerposition.Z)
 				shoulddosafetp = true
 			end
-			--tp away if the player gets too close to any sprout tantacle
+			--tp away if the player gets too close to any sprout tentacles or bassie spikes
 			local dangerentity = getDangerEntityCFrames()
 			for index, dangerEntityCFrame in ipairs(dangerentity) do
 				local dangerDistance = howfar(plr, dangerEntityCFrame)
 				if dangerDistance <=20 then
 					print("dangerDistance[" .. index .. "]:", dangerDistance)
 				end
-				if dangerDistance <= 10 then
+				if dangerDistance <= 12 then
 					shoulddosafetp = true
 					break
 				end
@@ -224,6 +228,7 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/alihusam078588-web/Tw
 
 -- UI
 pcall(function()
+    fjonestart=false
     plrgui.FjoneToggleUI:Destroy()
 end)
 
