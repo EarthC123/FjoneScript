@@ -8,7 +8,7 @@ local localroot = localcharacter:WaitForChild("HumanoidRootPart")
 local panic=workspace:WaitForChild("Info"):WaitForChild("Panic")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
-local fjonestart = true
+local fjonestart = false
 
 --workspace.Info.Panic
 function isPanic()
@@ -172,11 +172,40 @@ local function pointInParallelogram(p, A, B, D)
         and dotAD >= 0 and dotAD <= dot(ADx, ADy, ADx, ADy)
 end
 
-function isplayerinfake(plrposition, fakecframeArray)
+local function isplayerinfake(plrposition, fakecframeArray)
     if fakecframeArray and plrposition then
         return pointInParallelogram(plrposition, fakecframeArray["corner1"].Position, fakecframeArray["corner2"].Position, fakecframeArray["corner3"].Position)
     else
         return false
+    end
+end
+
+--workspace.CurrentRoom.EasterMap2.Generators:GetChildren()[9].Stats.Connie.Value == true
+local function BooAllMachine(generatorfolder)
+    for _, generator in generatorfolder:GetChildren() do
+        local statsfolder = generator:FindFirstChild("Stats")
+        local booconnie = statsfolder and statsfolder:FindFirstChild("Connie")
+        booconnie.Value = true
+    end
+end
+
+--workspace.CurrentRoom.EasterMap2.Monsters.ConnieMonster.Wandering.Value == true
+local function DeBooAllMachine(generatorfolder, connie)
+    local isghost = false
+    if connie then
+        local wandering = connie:FindFirstChild("Wandering")
+        if not wandering.Value then
+            isghost = true
+        end
+    end
+    for _, generator in generatorfolder:GetChildren() do
+        if isghost and howfar(generator:GetPivot(), connie:GetPivot()) <=10 then
+            print("Fjone: connie is booing, leave one alone")
+            continue
+        end
+        local statsfolder = generator:FindFirstChild("Stats")
+        local connieboo = statsfolder and statsfolder:FindFirstChild("Connie")
+        connieboo.Value = false
     end
 end
 
@@ -186,10 +215,13 @@ function()
 		if fjonestart and getMap() then
 			--fix when spoted, there is a chance still doing machine
 			local monstersFolder = getMap():FindFirstChild("Monsters")
+			local GeneratorFolder = getMap():FindFirstChild("Generators")
 			local playerposition = localcharacter.HumanoidRootPart.Position
 			local fakeElevatorCFrame = getFakeElevatorCFrame()
 			local fakeElevatorCFrameArray = nil
 			local shoulddosafetp = false
+			local isSeen = false
+			local mylittleconnie = nil
 			
 			if fakeElevatorCFrame then
 			    fakeElevatorCFrameArray = {
@@ -203,7 +235,12 @@ function()
 			--boxten function again! :D so remove this force tp
 			if monstersFolder then
 				for _, monster in monstersFolder:GetChildren() do
+				    -- if have connie, should be careful
+				    if monster.Name=="ConnieMonster" then
+				        mylittleconnie = monster
+				    end
 					if monster:FindFirstChild("ChasingValue") and monster.ChasingValue.Value == localcharacter then
+					    isSeen = true
 						task.wait(0.1)
 						if not isplayerinfake(playerposition,fakeElevatorCFrameArray) then
 							print("Fjone: not in fake")
@@ -216,6 +253,14 @@ function()
 					end
 				end
 			end
+
+			-- ghost all machine if seen
+			if isSeen then
+			    BooAllMachine(GeneratorFolder)
+			else
+			    DeBooAllMachine(GeneratorFolder, mylittleconnie)
+			end
+			
 			--fix tp to elevator front when fall out of map
 			if not clientinvalidposdetect(playerposition) then
 			    print("x,y,z=",playerposition.X,playerposition.Y,playerposition.Z)
