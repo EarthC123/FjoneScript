@@ -164,16 +164,15 @@ function()
 			local playerposition = localcharacter.HumanoidRootPart.Position
 			local fakeElevatorCFrame = getFakeElevatorCFrame()
 			local shoulddosafetp = false
-			--[[
-			boxten function again! :D so remove this force tp
+			--boxten function again! :D so remove this force tp
 			if monstersFolder then
 				for _, monster in monstersFolder:GetChildren() do
 					if monster:FindFirstChild("ChasingValue") and monster.ChasingValue.Value == localcharacter then
-						shoulddosafetp = true
+						shoulddosafetp = false
+						forceStop()
 					end
 				end
 			end
-			--]]
 			--fix tp to elevator front when fall out of map
 			if not clientinvalidposdetect(playerposition) then
 			    print("x,y,z=",playerposition.X,playerposition.Y,playerposition.Z)
