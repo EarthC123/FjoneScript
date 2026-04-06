@@ -182,6 +182,9 @@ end
 
 --workspace.CurrentRoom.EasterMap2.Generators:GetChildren()[9].Stats.Connie.Value == true
 local function BooAllMachine(generatorfolder)
+    if generatorfolder == nil then
+        return
+    end
     for _, generator in generatorfolder:GetChildren() do
         local statsfolder = generator:FindFirstChild("Stats")
         local booconnie = statsfolder and statsfolder:FindFirstChild("Connie")
@@ -191,6 +194,10 @@ end
 
 --workspace.CurrentRoom.EasterMap2.Monsters.ConnieMonster.Wandering.Value == true
 local function DeBooAllMachine(generatorfolder, connie)
+    if generatorfolder == nil then
+        return
+    end
+
     local isghost = false
     if connie then
         local wandering = connie:FindFirstChild("Wandering")
