@@ -269,7 +269,7 @@ function()
 							shoulddosafetp = true
 						else
 							print("Fjone: in fake")
-							shoulddosafetp = false
+							shoulddosafetp = true
 						end
 						--fix when spoted, there is a chance still doing machines
 						forceStop()
