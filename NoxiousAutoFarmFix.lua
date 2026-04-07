@@ -156,6 +156,7 @@ function getDangerEntityCFrames()
 	return cframes
 end
 
+-- using mathematics to check if player in fake elevator
 local function dot(ax, ay, bx, by)
     return ax * bx + ay * by
 end
@@ -180,6 +181,7 @@ local function isplayerinfake(plrposition, fakecframeArray)
     end
 end
 
+--using fake connie or deconnie machine can control boxten extraction behavior
 --workspace.CurrentRoom.EasterMap2.Generators:GetChildren()[9].Stats.Connie.Value == true
 local function BooAllMachine(generatorfolder)
     if generatorfolder == nil then
@@ -195,7 +197,7 @@ local function BooAllMachine(generatorfolder)
 end
 
 --workspace.CurrentRoom.EasterMap2.Monsters.ConnieMonster.Wandering.Value == true
-local function DeBooAllMachine(generatorfolder, connie)
+local function DeBooAllMachine(generatorfolder, connie, sprout)
     if generatorfolder == nil then
         return
     end
@@ -208,10 +210,16 @@ local function DeBooAllMachine(generatorfolder, connie)
         end
     end
     for _, generator in generatorfolder:GetChildren() do
+		-- if connie is hunting machine, skip the machine too close to connie since it should be real hunted
         if isghost and howfar(generator:GetPivot(), connie:GetPivot()) <=10 then
             print("Fjone: connie is booing, leave one alone")
             continue
         end
+		-- block the machines too close to sprout, so player will less likely trigger "anti-cheat" tentacles
+		if sprout and howfar(generator:GetPivot(), sprout:GetPivot()) <=50 then
+			print("Fjone: too close to sprout, keep fake hunted")
+			continue
+		end
         local statsfolder = generator:FindFirstChild("Stats")
         local connieboo = statsfolder and statsfolder:FindFirstChild("Connie")
         if connieboo then
@@ -220,11 +228,11 @@ local function DeBooAllMachine(generatorfolder, connie)
     end
 end
 
+--Main Loop
 task.spawn(
 function()
 	while true do
 		if fjonestart and getMap() then
-			--fix when spoted, there is a chance still doing machine
 			local monstersFolder = getMap():FindFirstChild("Monsters")
 			local GeneratorFolder = getMap():FindFirstChild("Generators")
 			local playerposition = localcharacter.HumanoidRootPart.Position
@@ -233,6 +241,7 @@ function()
 			local shoulddosafetp = false
 			local isSeen = false
 			local mylittleconnie = nil
+			local mylittlesprout = nil
 			
 			if fakeElevatorCFrame then
 			    fakeElevatorCFrameArray = {
@@ -243,16 +252,18 @@ function()
                     ["corner4"]=fakeElevatorCFrame + Vector3.new(-15, 0, -15)
                 }
             end
-			--boxten function again! :D so remove this force tp
+			--boxten function again! :D so remove this force tp, only do force tp when boxten failed to tp within 0.1s
 			if monstersFolder then
 				for _, monster in monstersFolder:GetChildren() do
-				    -- if have connie, should be careful
+				    -- if have connie and sprout, should be careful
 				    if monster.Name=="ConnieMonster" then
 				        mylittleconnie = monster
 				    end
+					if monster.Name=="SproutMonster" then
+						mylittlesprout = monster
+					end
 					if monster:FindFirstChild("ChasingValue") and monster.ChasingValue.Value == localcharacter then
 					    isSeen = true
-						task.wait(0.1)
 						if not isplayerinfake(playerposition,fakeElevatorCFrameArray) then
 							print("Fjone: not in fake")
 							shoulddosafetp = true
@@ -260,16 +271,18 @@ function()
 							print("Fjone: in fake")
 							shoulddosafetp = false
 						end
+						--fix when spoted, there is a chance still doing machines
 						forceStop()
 					end
 				end
 			end
 
-			-- ghost all machine if seen
+			-- ghost all machine if seen, so boxten will keep stay in fake until safe
 			if isSeen then
 			    BooAllMachine(GeneratorFolder)
+			-- deghost machine based on current situation
 			else
-			    DeBooAllMachine(GeneratorFolder, mylittleconnie)
+			    DeBooAllMachine(GeneratorFolder, mylittleconnie, mylittlesprout)
 			end
 			
 			--fix tp to elevator front when fall out of map
@@ -277,6 +290,7 @@ function()
 			    print("x,y,z=",playerposition.X,playerposition.Y,playerposition.Z)
 				shoulddosafetp = true
 			end
+
 			--tp away if the player gets too close to any sprout tentacles or bassie spikes
 			local dangerentity = getDangerEntityCFrames()
 			for index, dangerEntityCFrame in ipairs(dangerentity) do
@@ -289,6 +303,8 @@ function()
 					break
 				end
 			end
+
+			--do safe tp
 			if not isPanic() and shoulddosafetp and fakeElevatorCFrame then
                 for _, corner in pairs(fakeElevatorCFrameArray) do
                     local isSafe = true
