@@ -216,7 +216,7 @@ local function DeBooAllMachine(generatorfolder, connie, sprout)
             continue
         end
 		-- block the machines too close to sprout, so player will less likely trigger "anti-cheat" tentacles
-		if sprout and howfar(generator:GetPivot(), sprout:GetPivot()) <=80 then
+		if sprout and howfar(generator:GetPivot(), sprout:GetPivot()) <=100 then
 			print("Fjone: too close to sprout, keep fake hunted")
 			continue
 		end
