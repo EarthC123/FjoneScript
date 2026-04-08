@@ -254,6 +254,7 @@ function()
                 }
             end
 			--boxten function again! :D so remove this force tp, only do force tp when boxten failed to tp within 0.1s
+			--2026.4.8 update:I add it back bc boxten original tp cant handle tentacles, this lead to some mess :(
 			if monstersFolder then
 				for _, monster in monstersFolder:GetChildren() do
 				    -- if have connie and sprout, should be careful
