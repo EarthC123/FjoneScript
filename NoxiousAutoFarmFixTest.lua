@@ -183,16 +183,20 @@ end
 
 --using fake connie or deconnie machine can control boxten extraction behavior
 --workspace.CurrentRoom.EasterMap2.Generators:GetChildren()[9].Stats.Connie.Value == true
+local function boomachine(generator, shouldboo)
+    local statsfolder = generator:FindFirstChild("Stats")
+    local connieboo = statsfolder and statsfolder:FindFirstChild("Connie")
+    if connieboo then
+        connieboo.Value = shouldboo
+    end
+end
+
 local function BooAllMachine(generatorfolder)
     if generatorfolder == nil then
         return
     end
     for _, generator in generatorfolder:GetChildren() do
-        local statsfolder = generator:FindFirstChild("Stats")
-        local booconnie = statsfolder and statsfolder:FindFirstChild("Connie")
-        if booconnie then
-            booconnie.Value = true
-        end
+        boomachine(generator, true)
     end
 end
 
@@ -213,18 +217,15 @@ local function DeBooAllMachine(generatorfolder, connie, sprout)
 		-- if connie is hunting machine, skip the machine too close to connie since it should be real hunted
         if isghost and howfar(generator:GetPivot(), connie:GetPivot()) <=10 then
             print("Fjone: connie is booing, leave one alone")
+            boomachine(generator, true)
             continue
         end
 		-- block the machines too close to sprout, so player will less likely trigger "anti-cheat" tentacles
-		if sprout and howfar(generator:GetPivot(), sprout:GetPivot()) <=100 then
-			print("Fjone: too close to sprout, keep fake hunted")
+		if sprout and howfar(generator:GetPivot(), sprout:GetPivot()) <= 105 then
+			boomachine(generator, true)
 			continue
 		end
-        local statsfolder = generator:FindFirstChild("Stats")
-        local connieboo = statsfolder and statsfolder:FindFirstChild("Connie")
-        if connieboo then
-            connieboo.Value = false
-        end
+		boomachine(generator, false)
     end
 end
 
@@ -253,6 +254,7 @@ function()
                 }
             end
 			--boxten function again! :D so remove this force tp, only do force tp when boxten failed to tp within 0.1s
+			--2026.4.8 update:I add it back bc boxten original tp cant handle tentacles, this lead to some mess :(
 			if monstersFolder then
 				for _, monster in monstersFolder:GetChildren() do
 				    -- if have connie and sprout, should be careful
@@ -261,14 +263,19 @@ function()
 				    end
 					if monster.Name=="SproutMonster" then
 						mylittlesprout = monster
+						if howfar(plr, monster:GetPivot())<=105 then
+							shoulddosafetp = true
+							--print("fjone: too close to sprout, tp away")
+							forceStop()
+						end
 					end
 					if monster:FindFirstChild("ChasingValue") and monster.ChasingValue.Value == localcharacter then
 					    isSeen = true
 						if not isplayerinfake(playerposition,fakeElevatorCFrameArray) then
-							print("Fjone: not in fake")
+							--print("Fjone: not in fake")
 							shoulddosafetp = true
 						else
-							print("Fjone: in fake")
+							--print("Fjone: in fake")
 							shoulddosafetp = true
 						end
 						--fix when spoted, there is a chance still doing machines
@@ -298,7 +305,7 @@ function()
 				if dangerDistance <=20 then
 					print("dangerDistance[" .. index .. "]:", dangerDistance)
 				end
-				if dangerDistance <= 12 then
+				if dangerDistance <= 10 then
 					shoulddosafetp = true
 					break
 				end
