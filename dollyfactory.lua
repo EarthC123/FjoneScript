@@ -14,6 +14,40 @@ local ItemFolder=workspace:WaitForChild("Tools")
 local PlayerFolder=workspace:WaitForChild("Characters")
 local StuffingFolder=workspace:WaitForChild("Pickup"):WaitForChild("Stuffing")
 
+local STYLE_Machine = {
+    FillTransparency=0.7,
+    OutlineTransparency = 0.3,
+    FillColor = Color3.fromRGB(110, 125, 255),
+    OutlineColor = Color3.fromRGB(115, 0, 255)
+}
+local STYLE_Reject = {
+    FillTransparency=0.7,
+    OutlineTransparency = 0.3,
+    FillColor = Color3.fromRGB(255, 50, 50),
+    OutlineColor = Color3.fromRGB(255, 149, 0)
+}
+local STYLE_item = {
+    FillTransparency=0.7,
+    OutlineTransparency=0.3,
+    FillColor = Color3.fromRGB(30, 144, 255)
+}
+local STYLE_Player = {
+    FillTransparency=0.7,
+    OutlineTransparency = 0.3,
+    FillColor = Color3.fromRGB(0, 128, 0),
+    OutlineColor = Color3.fromRGB(0, 100, 0)
+}
+local STYLE_Invisible = {
+    FillTransparency=1,
+    OutlineTransparency = 1
+}
+
+local function apply_highlight_style(highlighteffect, style)
+    for property,value in pairs(style) do
+        highlighteffect[property]=value
+    end
+end
+
 local function itemblacklist(item)
     return false
 end
@@ -33,14 +67,11 @@ local function highlightReject(rejects)
     local highlighteffect=rejects:WaitForChild("RejectHighlight")
     highlighteffect:GetPropertyChangedSignal("OutlineTransparency"):Connect(
         function ()
-	        highlighteffect.FillTransparency=0.7
-	        highlighteffect.OutlineTransparency = 0.3
-	        highlighteffect.FillColor = Color3.fromRGB(255, 50, 50)
-	        highlighteffect.OutlineColor = Color3.fromRGB(255, 149, 0)
+	        apply_highlight_style(highlighteffect, STYLE_Reject)
 	    end
 	)
 	highlighteffect:GetPropertyChangedSignal("DepthMode"):Connect(
-	    function()
+	    function ()
 	        highlighteffect.DepthMode=Enum.HighlightDepthMode.AlwaysOnTop
 	    end
 	)
@@ -64,14 +95,10 @@ local function highlightMachine(machine)
     local isComplete=false
     local function Machinehighlighteffect()
         if isComplete then
-            highlighteffect.FillTransparency=1
-	        highlighteffect.OutlineTransparency = 1
+            apply_highlight_style(highlighteffect, STYLE_Invisible)
             return
         end
-	    highlighteffect.FillTransparency=0.7
-	    highlighteffect.OutlineTransparency = 0.3
-	    highlighteffect.FillColor = Color3.fromRGB(110, 125, 255)
-	    highlighteffect.OutlineColor = Color3.fromRGB(115, 0, 255)
+	    apply_highlight_style(highlighteffect, STYLE_Machine)
     end
     highlighteffect:GetPropertyChangedSignal("OutlineTransparency"):Connect(
         function ()
@@ -98,22 +125,16 @@ end
 --workspace.Pickup.Stuffing:GetChildren()[2]
 local function highlightStuffing(stuffing)
     local highlighteffect=Instance.new("Highlight")
-    highlighteffect.FillTransparency=0.7
-    highlighteffect.OutlineTransparency=0.1
-	highlighteffect.FillColor = Color3.fromRGB(30, 144, 255)
+    apply_highlight_style(highlighteffect, STYLE_item)
     fjonehighlight(stuffing, highlighteffect)
 end
-
---workspace.Interacts.ItemCollection:GetChildren()[13]
 
 local function highlightItem(item)
     if itemblacklist(item) == true then
         return
     end
     local highlighteffect=Instance.new("Highlight")
-    highlighteffect.FillTransparency=0.7
-    highlighteffect.OutlineTransparency=0.1
-	highlighteffect.FillColor = Color3.fromRGB(30, 144, 255)
+    apply_highlight_style(highlighteffect, STYLE_item)
     fjonehighlight(item, highlighteffect)
 end
 
@@ -122,44 +143,38 @@ local function highlightPlayer(player)
         return
     end
     local highlighteffect=Instance.new("Highlight")
-    highlighteffect.FillTransparency=0.7
-	highlighteffect.OutlineTransparency = 0.3
-	highlighteffect.FillColor = Color3.fromRGB(0, 128, 0)
-	highlighteffect.OutlineColor = Color3.fromRGB(0, 100, 0)
+    apply_highlight_style(highlighteffect, STYLE_Player)
     fjonehighlight(player, highlighteffect)
 end
 
+--workspace.Interacts.ItemCollection:GetChildren()[13]
 
-local function Fjone_highlightFolder(dir)
-	local list = dir:GetChildren()
-	local highlightfunc = nil
-	if dir==RejectFolder then
-	    highlightfunc=highlightReject
-	elseif dir==MachineFolder then
-	    highlightfunc=highlightMachine
-	elseif dir==ItemFolder then
-	    highlightfunc=highlightItem
-	elseif dir==PlayerFolder then
-	    highlightfunc=highlightPlayer
-	elseif dir==StuffingFolder then
-	    highlightfunc=highlightStuffing
-	end
-	for itemidx in list do
-		highlightfunc(list[itemidx])
-	end
-end
+
+local folder_rules = {
+    [RejectFolder] = {
+        handler = highlightReject
+    },
+    [MachineFolder] = {
+        handler = highlightMachine
+    },
+    [ItemFolder] = {
+        handler = highlightItem
+    },
+    [PlayerFolder] = {
+        handler = highlightPlayer
+    },
+    [StuffingFolder] = {
+        handler = highlightStuffing
+    }
+}
 
 local function onInit()
-    Fjone_highlightFolder(RejectFolder)
-    Fjone_highlightFolder(MachineFolder)
-    Fjone_highlightFolder(ItemFolder)
-    Fjone_highlightFolder(PlayerFolder)
-    Fjone_highlightFolder(StuffingFolder)
-    RejectFolder.ChildAdded:Connect(highlightReject)
-    MachineFolder.ChildAdded:Connect(highlightMachine)
-    ItemFolder.ChildAdded:Connect(highlightItem)
-    PlayerFolder.ChildAdded:Connect(highlightPlayer)
-    StuffingFolder.ChildAdded:Connect(highlightStuffing)
+    for folder, rule in pairs(folder_rules) do
+        for _, item in ipairs(folder:GetChildren()) do
+		    rule.handler(item)
+	    end
+        folder.ChildAdded:Connect(rule.handler)
+    end
 end
 
 onInit()
