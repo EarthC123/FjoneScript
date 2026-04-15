@@ -216,7 +216,7 @@ local function DeBooAllMachine(generatorfolder, connie, sprout)
     for _, generator in generatorfolder:GetChildren() do
 		-- if connie is hunting machine, skip the machine too close to connie since it should be real hunted
         if isghost and howfar(generator:GetPivot(), connie:GetPivot()) <=10 then
-            print("Fjone: connie is booing, leave one alone")
+            --print("Fjone: connie is booing, leave one alone")
             boomachine(generator, true)
             continue
         end
@@ -246,8 +246,7 @@ function()
 			
 			if fakeElevatorCFrame then
 			    fakeElevatorCFrameArray = {
-                    ["center"]=fakeElevatorCFrame,
-                    ["corner1"]=fakeElevatorCFrame + Vector3.new(13, 0, 15),
+                   ["corner1"]=fakeElevatorCFrame + Vector3.new(13, 0, 15),
                     ["corner2"]=fakeElevatorCFrame + Vector3.new(13, 0, -15),
                     ["corner3"]=fakeElevatorCFrame + Vector3.new(-15, 0, 15),
                     ["corner4"]=fakeElevatorCFrame + Vector3.new(-15, 0, -15)
