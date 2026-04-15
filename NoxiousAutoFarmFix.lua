@@ -301,9 +301,9 @@ function()
 			local dangerentity = getDangerEntityCFrames()
 			for index, dangerEntityCFrame in ipairs(dangerentity) do
 				local dangerDistance = howfar(plr, dangerEntityCFrame)
-				if dangerDistance <=20 then
-					print("dangerDistance[" .. index .. "]:", dangerDistance)
-				end
+				--if dangerDistance <=20 then
+					--print("dangerDistance[" .. index .. "]:", dangerDistance)
+				--end
 				if dangerDistance <= 10 then
 					shoulddosafetp = true
 					break
