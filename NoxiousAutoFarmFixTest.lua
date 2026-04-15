@@ -152,6 +152,14 @@ function getFakeElevatorCFrame()
 	return nil
 end
 
+function getElevatorCFrame()
+    local elevator = workspace:FindFirstChild("Elevators") and workspace.Elevators:FindFirstChild("Elevator")
+    if elevator and elevator:IsA("Model") then
+        return elevator:GetPivot() + Vector3.new(0, 3, 0)
+    end
+    return nil
+end
+
 function clientinvalidposdetect(playerposition)
 	if not playerposition or typeof(playerposition) ~= "Vector3" then
 		return false
@@ -307,6 +315,7 @@ task.spawn(function()
 				local playerposition = localcharacter.HumanoidRootPart.Position
 				local fakeElevatorCFrame = getFakeElevatorCFrame()
 				local fakeElevatorCFrameArray = nil
+				local elevatorCFrame = getElevatorCFrame()
 				local shoulddosafetp = false
 				local isSeen = false
 				local mylittleconnie = nil
@@ -395,6 +404,10 @@ task.spawn(function()
 							break
 						end
 					end
+				end
+				-- fix when seen and it happened in panic mode, there is a chance tp to fake and died when timeout.
+				if isPanic() and elevatorCFrame then
+					teleportplr(elevatorCFrame)
 				end
 			end
 		end
