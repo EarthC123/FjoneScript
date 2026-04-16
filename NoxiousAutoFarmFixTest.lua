@@ -12,6 +12,11 @@ local fjonestart = false
 
 local autoToggle = nil
 
+plr.CharacterAdded:Connect(function(character)
+    localcharacter = character
+    localroot = localcharacter:WaitForChild("HumanoidRootPart")
+end)
+
 --WatchDog
 local WatchDog = {}
 WatchDog.__index = WatchDog
@@ -309,7 +314,7 @@ task.spawn(function()
 	while true do
 		if fjonestart then
 			mainLoopWatchDog:Feed()
-			if getMap() then
+			if getMap() and localcharacter:FindFirstChild("HumanoidRootPart") then
 				local monstersFolder = getMap():FindFirstChild('Monsters')
 				local GeneratorFolder = getMap():FindFirstChild('Generators')
 				local playerposition = localcharacter.HumanoidRootPart.Position

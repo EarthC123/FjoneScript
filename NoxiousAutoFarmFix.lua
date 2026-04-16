@@ -10,6 +10,78 @@ local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local fjonestart = false
 
+local autoToggle = nil
+
+plr.CharacterAdded:Connect(function(character)
+    localcharacter = character
+    localroot = localcharacter:WaitForChild("HumanoidRootPart")
+end)
+
+--WatchDog
+local WatchDog = {}
+WatchDog.__index = WatchDog
+
+function WatchDog.new(barkcallback, timeout)
+    local self = setmetatable({}, WatchDog)
+    self.lastFeedAt = 0
+    self.timeout = timeout or 1
+    self.checkInterval = self.timeout / 2
+    if self.checkInterval <= 0 then
+        self.checkInterval = 0.1
+    end
+    self.armed = false
+    self.running = true
+    self.barked = false
+    self.barkcallback = barkcallback or function()
+        warn("Watchdog: Dummy Bark")
+    end
+
+    task.spawn(function()
+        while self.running do
+            if self.armed and time() - self.lastFeedAt > self.timeout then
+                self.barked = true
+                self.armed = false
+                self.barkcallback(self)
+            end
+            task.wait(self.checkInterval)
+        end
+    end)
+
+    return self
+end
+
+function WatchDog:UnchainDog()
+    self.lastFeedAt = time()
+    self.barked = false
+    self.armed = true
+end
+
+-- dearm
+function WatchDog:ChainDog()
+    self.armed = false
+    self.barked = false
+end
+
+function WatchDog:Feed()
+    if not self.armed then
+        return
+    end
+    self.lastFeedAt = time()
+end
+
+function WatchDog:Kill()
+    self.running = false
+    self.armed = false
+end
+
+local mainLoopWatchDog = WatchDog.new(function()
+    warn("Fjone: Script CRASHED or HANGED!!")
+    fjonestart = false
+	if autoToggle then
+		autoToggle.Set(false)
+	end
+end, 1)
+
 --workspace.Info.Panic
 function isPanic()
     return panic.Value
@@ -27,7 +99,7 @@ function getMap()
 	if map and map.Parent then
 		return map
 	end
-	map = workspace.CurrentRoom:FindFirstChildWhichIsA("Model");
+	map = workspace.CurrentRoom:FindFirstChildWhichIsA("Model")
 	return map
 end
 
@@ -83,6 +155,14 @@ function getFakeElevatorCFrame()
 		end
 	end
 	return nil
+end
+
+function getElevatorCFrame()
+    local elevator = workspace:FindFirstChild("Elevators") and workspace.Elevators:FindFirstChild("Elevator")
+    if elevator and elevator:IsA("Model") then
+        return elevator:GetPivot() + Vector3.new(0, 3, 0)
+    end
+    return nil
 end
 
 function clientinvalidposdetect(playerposition)
@@ -230,109 +310,115 @@ local function DeBooAllMachine(generatorfolder, connie, sprout)
 end
 
 --Main Loop
-task.spawn(
-function()
+task.spawn(function()
 	while true do
-		if fjonestart and getMap() then
-			local monstersFolder = getMap():FindFirstChild("Monsters")
-			local GeneratorFolder = getMap():FindFirstChild("Generators")
-			local playerposition = localcharacter.HumanoidRootPart.Position
-			local fakeElevatorCFrame = getFakeElevatorCFrame()
-			local fakeElevatorCFrameArray = nil
-			local shoulddosafetp = false
-			local isSeen = false
-			local mylittleconnie = nil
-			local mylittlesprout = nil
-			
-			if fakeElevatorCFrame then
-			    fakeElevatorCFrameArray = {
-                   ["corner1"]=fakeElevatorCFrame + Vector3.new(13, 0, 15),
-                    ["corner2"]=fakeElevatorCFrame + Vector3.new(13, 0, -15),
-                    ["corner3"]=fakeElevatorCFrame + Vector3.new(-15, 0, 15),
-                    ["corner4"]=fakeElevatorCFrame + Vector3.new(-15, 0, -15)
-                }
-            end
-			--boxten function again! :D so remove this force tp, only do force tp when boxten failed to tp within 0.1s
-			--2026.4.8 update:I add it back bc boxten original tp cant handle tentacles, this lead to some mess :(
-			if monstersFolder then
-				for _, monster in monstersFolder:GetChildren() do
-				    -- if have connie and sprout, should be careful
-				    if monster.Name=="ConnieMonster" then
-				        mylittleconnie = monster
-				    end
-					if monster.Name=="SproutMonster" then
-						mylittlesprout = monster
-						if howfar(plr, monster:GetPivot())<=105 then
-							shoulddosafetp = true
-							--print("fjone: too close to sprout, tp away")
+		if fjonestart then
+			mainLoopWatchDog:Feed()
+			if getMap() and localcharacter:FindFirstChild("HumanoidRootPart") then
+				local monstersFolder = getMap():FindFirstChild('Monsters')
+				local GeneratorFolder = getMap():FindFirstChild('Generators')
+				local playerposition = localcharacter.HumanoidRootPart.Position
+				local fakeElevatorCFrame = getFakeElevatorCFrame()
+				local fakeElevatorCFrameArray = nil
+				local elevatorCFrame = getElevatorCFrame()
+				local shoulddosafetp = false
+				local isSeen = false
+				local mylittleconnie = nil
+				local mylittlesprout = nil
+
+				if fakeElevatorCFrame then
+					fakeElevatorCFrameArray = {
+						['corner1'] = fakeElevatorCFrame + Vector3.new(13, 0, 15),
+						['corner2'] = fakeElevatorCFrame + Vector3.new(13, 0, -15),
+						['corner3'] = fakeElevatorCFrame + Vector3.new(-15, 0, 15),
+						['corner4'] = fakeElevatorCFrame + Vector3.new(-15, 0, -15),
+					}
+				end
+				--boxten function again! :D so remove this force tp, only do force tp when boxten failed to tp within 0.1s
+				--2026.4.8 update:I add it back bc boxten original tp cant handle tentacles, this lead to some mess :(
+				if monstersFolder then
+					for _, monster in monstersFolder:GetChildren() do
+						-- if have connie and sprout, should be careful
+						if monster.Name == 'ConnieMonster' then
+							mylittleconnie = monster
+						end
+						if monster.Name == 'SproutMonster' then
+							mylittlesprout = monster
+							if howfar(plr, monster:GetPivot()) <= 105 then
+								shoulddosafetp = true
+								--print("fjone: too close to sprout, tp away")
+								forceStop()
+							end
+						end
+						if monster:FindFirstChild('ChasingValue') and monster.ChasingValue.Value == localcharacter then
+							isSeen = true
+							if not isplayerinfake(playerposition, fakeElevatorCFrameArray) then
+								--print("Fjone: not in fake")
+								shoulddosafetp = true
+							else
+								--print("Fjone: in fake")
+								shoulddosafetp = true
+							end
+							--fix when spoted, there is a chance still doing machines
 							forceStop()
 						end
 					end
-					if monster:FindFirstChild("ChasingValue") and monster.ChasingValue.Value == localcharacter then
-					    isSeen = true
-						if not isplayerinfake(playerposition,fakeElevatorCFrameArray) then
-							--print("Fjone: not in fake")
-							shoulddosafetp = true
-						else
-							--print("Fjone: in fake")
-							shoulddosafetp = true
-						end
-						--fix when spoted, there is a chance still doing machines
-						forceStop()
+				end
+
+				-- ghost all machine if seen, so boxten will keep stay in fake until safe
+				if isSeen then
+					BooAllMachine(GeneratorFolder)
+				-- deghost machine based on current situation
+				else
+					DeBooAllMachine(GeneratorFolder, mylittleconnie, mylittlesprout)
+				end
+
+				--fix tp to elevator front when fall out of map
+				if not clientinvalidposdetect(playerposition) then
+					print('x,y,z=', playerposition.X, playerposition.Y, playerposition.Z)
+					shoulddosafetp = true
+				end
+
+				--tp away if the player gets too close to any sprout tentacles or bassie spikes
+				local dangerentity = getDangerEntityCFrames()
+				for index, dangerEntityCFrame in ipairs(dangerentity) do
+					local dangerDistance = howfar(plr, dangerEntityCFrame)
+					--if dangerDistance <=20 then
+					--print("dangerDistance[" .. index .. "]:", dangerDistance)
+					--end
+					if dangerDistance <= 10 then
+						shoulddosafetp = true
+						break
 					end
 				end
-			end
 
-			-- ghost all machine if seen, so boxten will keep stay in fake until safe
-			if isSeen then
-			    BooAllMachine(GeneratorFolder)
-			-- deghost machine based on current situation
-			else
-			    DeBooAllMachine(GeneratorFolder, mylittleconnie, mylittlesprout)
-			end
-			
-			--fix tp to elevator front when fall out of map
-			if not clientinvalidposdetect(playerposition) then
-			    print("x,y,z=",playerposition.X,playerposition.Y,playerposition.Z)
-				shoulddosafetp = true
-			end
-
-			--tp away if the player gets too close to any sprout tentacles or bassie spikes
-			local dangerentity = getDangerEntityCFrames()
-			for index, dangerEntityCFrame in ipairs(dangerentity) do
-				local dangerDistance = howfar(plr, dangerEntityCFrame)
-				--if dangerDistance <=20 then
-					--print("dangerDistance[" .. index .. "]:", dangerDistance)
-				--end
-				if dangerDistance <= 10 then
-					shoulddosafetp = true
-					break
+				--do safe tp
+				if not isPanic() and shoulddosafetp and fakeElevatorCFrame then
+					for _, corner in pairs(fakeElevatorCFrameArray) do
+						local isSafe = true
+						for _, entity in pairs(dangerentity) do
+							if howfar(corner, entity) <= 10 then
+								-- position too close to danger is invalid
+								isSafe = false
+								break
+							end
+						end
+						if isSafe then
+							teleportplr(corner)
+							forceStop()
+							break
+						end
+					end
+				end
+				-- fix when seen and it happened in panic mode, there is a chance tp to fake and died when timeout.
+				if isPanic() and elevatorCFrame then
+					teleportplr(elevatorCFrame)
 				end
 			end
-
-			--do safe tp
-			if not isPanic() and shoulddosafetp and fakeElevatorCFrame then
-                for _, corner in pairs(fakeElevatorCFrameArray) do
-                    local isSafe = true
-                    for _, entity in pairs(dangerentity) do
-                        if howfar(corner, entity)<=10 then
-                        -- position too close to danger is invalid
-                            isSafe=false
-                            break
-                        end
-                    end
-                    if isSafe then
-                        teleportplr(corner)
-                        forceStop()
-                        break
-                    end
-                end
-            end
 		end
-		task.wait(1/15)
+		task.wait(1 / 15)
 	end
-end
-)
+end)
 
 
 -- (Auto Struggle) Thx to Ali_hhjjj from riddance club 
@@ -492,22 +578,24 @@ local function CreateToggle(config)
         end
     end)
 
-    return {
-        Set = function(v)
-            state = v
-            Knob.Position = v and UDim2.fromScale(0.42,0.1) or UDim2.fromScale(0.03,0.1)
-            Knob.BackgroundColor3 = v and Color3.fromRGB(100,255,100) or Color3.fromRGB(255,100,100)
-        end,
-        Get = function()
-            return state
-        end,
-        Destroy = function()
-            Main:Destroy()
-        end
-    }
+	return {
+		Set = function(v)
+			state = v
+			TweenService:Create(Knob, TweenInfo.new(0.25, Enum.EasingStyle.Quart), {
+				Position = state and UDim2.fromScale(0.6, 0.05) or UDim2.fromScale(0.03, 0.05),
+				BackgroundColor3 = state and Color3.fromRGB(100, 255, 100) or Color3.fromRGB(255, 100, 100),
+			}):Play()
+		end,
+		Get = function()
+			return state
+		end,
+		Destroy = function()
+			Main:Destroy()
+		end,
+	}
 end
 
-local autoToggle = CreateToggle({
+autoToggle = CreateToggle({
     Text = "Fjone\nAutofarm Fix",
     Default = fjonestart,
     Position = UDim2.fromScale(0.78, 0.55),
@@ -517,6 +605,11 @@ local autoToggle = CreateToggle({
     Callback = function(on)
         print("Fjone AutofarmFix:", on)
         fjonestart= on
+		if on then
+			mainLoopWatchDog:UnchainDog()
+		else
+			mainLoopWatchDog:ChainDog()
+		end
     end
 })
 
