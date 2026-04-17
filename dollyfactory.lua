@@ -16,6 +16,7 @@ local StuffingFolder=workspace:WaitForChild("Pickup"):WaitForChild("Stuffing")
 
 local BuffHandler = require(replicated.Shared.Modules.BuffHandler)
 local CharacterControl = require(plr.PlayerScripts.Client.CharacterController)
+local MachineMinigame = require(plr.PlayerScripts.Client.Interface.UIController.GameUI.MachineMinigame)
 
 -- esp
 local STYLE_Machine = {
@@ -191,4 +192,12 @@ BuffHandler.IsActive = function(self, buffname)
         return true
     end
     return ori_IsActive(self, buffname)
+end
+
+-- skillcheck Always Success
+local ori_getscore = MachineMinigame.GetMinigameScore
+
+MachineMinigame.GetMinigameScore = function(self, ...)
+    ori_getscore(self, ...)
+    return "Perfect"
 end
