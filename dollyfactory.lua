@@ -14,6 +14,10 @@ local ItemFolder=workspace:WaitForChild("Tools")
 local PlayerFolder=workspace:WaitForChild("Characters")
 local StuffingFolder=workspace:WaitForChild("Pickup"):WaitForChild("Stuffing")
 
+local BuffHandler = require(replicated.Shared.Modules.BuffHandler)
+local CharacterControl = require(plr.PlayerScripts.Client.CharacterController)
+
+-- esp
 local STYLE_Machine = {
     FillTransparency=0.7,
     OutlineTransparency = 0.3,
@@ -179,5 +183,12 @@ end
 
 onInit()
 
---infinite stamina
+-- infinite stamina
+local ori_IsActive = BuffHandler.IsActive
 
+BuffHandler.IsActive = function(self, buffname)
+    if buffname == "InfiniteStamina" then
+        return true
+    end
+    return ori_IsActive(self, buffname)
+end
