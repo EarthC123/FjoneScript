@@ -412,7 +412,12 @@ task.spawn(function()
 				end
 				-- fix when seen and it happened in panic mode, there is a chance tp to fake and died when timeout.
 				if isPanic() and elevatorCFrame then
-					teleportplr(elevatorCFrame)
+					mainLoopWatchDog:ChainDog()
+					task.wait(7)
+					mainLoopWatchDog:UnchainDog()
+					if howfar(plr, elevatorCFrame) >= 30 then
+						teleportplr(elevatorCFrame)
+					end
 				end
 			end
 		end
