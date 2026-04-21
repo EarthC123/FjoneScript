@@ -7,6 +7,7 @@ local plrgui = plr:WaitForChild("PlayerGui")
 local screengui = plrgui:FindFirstChild("ScreenGui")
 local RunService = game:GetService("RunService")
 local lighting=game:GetService("Lighting")
+local proximitysrv = game:GetService("ProximityPromptService")
 
 local RejectFolder=workspace:WaitForChild("Enemies")
 local MachineFolder=workspace:WaitForChild("Interacts")
@@ -129,6 +130,11 @@ end
 
 --workspace.Pickup.Stuffing:GetChildren()[2]
 local function highlightStuffing(stuffing)
+    local prompt = stuffing:FindFirstChildWhichIsA("ProximityPrompt", true)
+    if prompt then
+        prompt.MaxActivationDistance = 7
+        prompt.HoldDuration = 0
+    end
     local highlighteffect=Instance.new("Highlight")
     apply_highlight_style(highlighteffect, STYLE_item)
     fjonehighlight(stuffing, highlighteffect)
@@ -201,3 +207,40 @@ MachineMinigame.GetMinigameScore = function(self, ...)
     ori_getscore(self, ...)
     return "Perfect"
 end
+
+-- auto collect Stuffing
+local function interactWithPrompt(prompt)
+    if not prompt.Parent or prompt.Enabled == false then
+        return
+    end
+    if prompt.HoldDuration == 0 then
+        prompt:InputHoldBegin()
+        task.wait()
+        prompt:InputHoldEnd()
+        return
+    end
+    prompt:InputHoldBegin()
+    task.wait(prompt.HoldDuration)
+    if prompt.Parent and prompt.Enabled then
+        prompt:InputHoldEnd()
+    end
+end
+
+local function isStuffingPrompt(prompt)
+    return prompt:IsDescendantOf(StuffingFolder)
+end
+
+proximitysrv.PromptShown:Connect(function(prompt)
+    if prompt.HoldDuration ~= 0 then
+        prompt.HoldDuration = 0
+    end
+    if isStuffingPrompt(prompt) == false then
+        return
+    end
+    task.spawn(function()
+        interactWithPrompt(prompt)
+    end)
+end)
+
+--proximitysrv.PromptHidden:Connect(function(prompt)
+--end)
