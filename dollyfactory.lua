@@ -14,6 +14,7 @@ local MachineFolder=workspace:WaitForChild("Interacts")
 local ItemFolder=workspace:WaitForChild("Tools")
 local PlayerFolder=workspace:WaitForChild("Characters")
 local StuffingFolder=workspace:WaitForChild("Pickup"):WaitForChild("Stuffing")
+local TrainpartFolder=MachineFolder:WaitForChild("ItemCollection")
 
 local BuffHandler = require(replicated.Shared.Modules.BuffHandler)
 local CharacterControl = require(plr.PlayerScripts.Client.CharacterController)
@@ -46,6 +47,12 @@ local STYLE_Player = {
 local STYLE_Invisible = {
     FillTransparency=1,
     OutlineTransparency = 1
+}
+local STYLE_Trainpart = {
+    FillTransparency=0.5,
+    OutlineTransparency = 0,
+    FillColor = Color3.fromRGB(255, 231, 135),
+    OutlineColor = Color3.fromRGB(255, 231, 135)
 }
 
 local function apply_highlight_style(highlighteffect, style)
@@ -159,6 +166,11 @@ local function highlightPlayer(player)
 end
 
 --workspace.Interacts.ItemCollection:GetChildren()[13]
+local function highlightTrainpart(trainpart)
+    local highlighteffect=Instance.new("Highlight")
+    apply_highlight_style(highlighteffect, STYLE_Trainpart)
+    fjonehighlight(trainpart, highlighteffect)
+end
 
 
 local folder_rules = {
@@ -176,6 +188,9 @@ local folder_rules = {
     },
     [StuffingFolder] = {
         handler = highlightStuffing
+    },
+    [TrainpartFolder] = {
+        handler = highlightTrainpart
     }
 }
 
