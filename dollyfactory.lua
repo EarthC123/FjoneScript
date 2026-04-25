@@ -15,6 +15,7 @@ local ItemFolder=workspace:WaitForChild("Tools")
 local PlayerFolder=workspace:WaitForChild("Characters")
 local StuffingFolder=workspace:WaitForChild("Pickup"):WaitForChild("Stuffing")
 local TrainpartFolder=MachineFolder:WaitForChild("ItemCollection")
+local MapFolder=workspace:WaitForChild("Map")
 
 local BuffHandler = require(replicated.Shared.Modules.BuffHandler)
 local CharacterControl = require(plr.PlayerScripts.Client.CharacterController)
@@ -49,10 +50,22 @@ local STYLE_Invisible = {
     OutlineTransparency = 1
 }
 local STYLE_Trainpart = {
-    FillTransparency=0.5,
-    OutlineTransparency = 0,
-    FillColor = Color3.fromRGB(255, 231, 135),
-    OutlineColor = Color3.fromRGB(255, 231, 135)
+    FillTransparency=0.7,
+    OutlineTransparency=0.3,
+    FillColor = Color3.fromRGB(120, 215, 255),
+    OutlineColor = Color3.fromRGB(33, 92, 255)
+}
+local STYLE_KEPLIE = {
+    FillTransparency=0.7,
+    OutlineTransparency=0.3,
+    FillColor = Color3.fromRGB(37, 15, 148),
+    OutlineColor = Color3.fromRGB(162, 146, 242)
+}
+local STYLE_EGGSPAWN = {
+    FillTransparency=0.7,
+    OutlineTransparency=0.3,
+    FillColor = Color3.fromRGB(0, 255, 0),
+    OutlineColor = Color3.fromRGB(0, 149, 0)
 }
 
 local function apply_highlight_style(highlighteffect, style)
@@ -172,6 +185,20 @@ local function highlightTrainpart(trainpart)
     fjonehighlight(trainpart, highlighteffect)
 end
 
+local function highlightKeplie(keplie)
+    print("Fjone:highlight ",keplie.Name)
+    local highlighteffect=Instance.new("Highlight")
+    apply_highlight_style(highlighteffect, STYLE_KEPLIE)
+    fjonehighlight(keplie, highlighteffect)
+end
+
+local function highlightEggSpawn(egginteract)
+    egginteract.Transparency = 0
+    local highlighteffect=Instance.new("Highlight")
+    apply_highlight_style(highlighteffect, STYLE_EGGSPAWN)
+    fjonehighlight(egginteract, highlighteffect)
+end
+
 
 local folder_rules = {
     [RejectFolder] = {
@@ -194,6 +221,17 @@ local folder_rules = {
     }
 }
 
+local Map_Rules = {
+    --workspace.Map.Segments.Segment[2].KeplieHold.KeplieRoot.Keplie1
+    ["^Keplie%d+$"] = {
+        handler = highlightKeplie
+    },
+    --workspace.Map.Interact.EggSpawn.InterractPart
+    ["^EggSpawn$"] = {
+        handler = highlightEggSpawn
+    }
+}
+
 local function onInit()
     for folder, rule in pairs(folder_rules) do
         for _, item in ipairs(folder:GetChildren()) do
@@ -201,6 +239,48 @@ local function onInit()
 	    end
         folder.ChildAdded:Connect(rule.handler)
     end
+    for _, obj in ipairs(MapFolder:GetDescendants()) do    
+        for itemname, rule in pairs(Map_Rules) do
+            if string.match(obj.Name, itemname) then
+                rule.handler(obj)
+            end
+        end
+    end
+    workspace.ChildAdded:Connect(function(folder)
+        if folder.Name == "Map" then
+            local SegmentsFolder = folder:WaitForChild("Segments")
+            local InteractsFolder = folder:WaitForChild("Interact")
+
+            local SegmentsConnection
+            local InteractsConnection
+            
+            SegmentsConnection = SegmentsFolder.DescendantAdded:Connect(function(obj)
+                if string.match(obj.Name, "^Keplie%d+$") then
+                    print("Fjone: Keplie Added ", obj.Name)
+                    highlightKeplie(obj)
+                end
+            end)
+            for _,obj in ipairs(SegmentsFolder:GetDescendants()) do
+                if string.match(obj.Name, "^Keplie%d+$") then
+                    print("Fjone: Keplie Founded ", obj.Name)
+                    highlightKeplie(obj)
+                end
+            end
+
+            InteractsConnection = InteractsFolder.DescendantAdded:Connect(function(obj)
+                if obj.Name == "InteractPart" and obj.Parent.Name == "EggSpawn" then
+                    print("Fjone: InteractPart Added")
+                    highlightEggSpawn(obj)
+                end
+            end)
+            for _,obj in ipairs(InteractsFolder:GetDescendants()) do
+                if obj.Name == "InteractPart" and obj.Parent.Name == "EggSpawn" then
+                    print("Fjone: InteractPart Founded ")
+                    highlightEggSpawn(obj)
+                end
+            end
+        end
+    end)
 end
 
 onInit()
