@@ -15,7 +15,6 @@ local ItemFolder=workspace:WaitForChild("Tools")
 local PlayerFolder=workspace:WaitForChild("Characters")
 local StuffingFolder=workspace:WaitForChild("Pickup"):WaitForChild("Stuffing")
 local TrainpartFolder=MachineFolder:WaitForChild("ItemCollection")
-local MapFolder=workspace:WaitForChild("Map")
 
 local BuffHandler = require(replicated.Shared.Modules.BuffHandler)
 local CharacterControl = require(plr.PlayerScripts.Client.CharacterController)
@@ -114,7 +113,7 @@ local function waitForPath(root, path)
 end
 
 local function highlightMachine(machine)
-    if machine.Name == "ItemCollection" then
+    if machine.Name == "ItemCollection" or machine.Name == "ExplosionPrefab" then
         return
     end
     local highlighteffect=machine:WaitForChild("Highlight")
@@ -223,14 +222,32 @@ local folder_rules = {
 
 local Map_Rules = {
     --workspace.Map.Segments.Segment[2].KeplieHold.KeplieRoot.Keplie1
-    ["^Keplie%d+$"] = {
+    ["Segments"] = {
+        matchstr = "^Keplie%d+$",
         handler = highlightKeplie
     },
     --workspace.Map.Interact.EggSpawn.InterractPart
-    ["^EggSpawn$"] = {
+    ["Interact"] = {
+        matchstr = "^InteractPart$",
         handler = highlightEggSpawn
     }
 }
+
+local function handlemap(mapfolder)
+    for foldername, rule in pairs(Map_Rules) do
+        local function applyrule(obj)
+            if string.match(obj.Name, rule.matchstr) then
+                print("Fjone: Founded ", obj.Name)
+                rule.handler(obj)
+            end
+        end
+        local subfolder = mapfolder:WaitForChild(foldername)
+        for _,obj in ipairs(subfolder:GetDescendants()) do
+            applyrule(obj)
+        end
+        subfolder.DescendantAdded:Connect(applyrule)
+    end
+end
 
 local function onInit()
     for folder, rule in pairs(folder_rules) do
@@ -239,47 +256,17 @@ local function onInit()
 	    end
         folder.ChildAdded:Connect(rule.handler)
     end
-    for _, obj in ipairs(MapFolder:GetDescendants()) do    
-        for itemname, rule in pairs(Map_Rules) do
-            if string.match(obj.Name, itemname) then
-                rule.handler(obj)
+    local MapFolder=workspace:WaitForChild("Map")
+    handlemap(MapFolder)
+    workspace.ChildAdded:Connect(function(addedfolder)
+        local function doifmap()
+            if addedfolder.Name == "Map" then
+                print("Fjone:Map added")
+                handlemap(addedfolder)
             end
         end
-    end
-    workspace.ChildAdded:Connect(function(folder)
-        if folder.Name == "Map" then
-            local SegmentsFolder = folder:WaitForChild("Segments")
-            local InteractsFolder = folder:WaitForChild("Interact")
-
-            local SegmentsConnection
-            local InteractsConnection
-            
-            SegmentsConnection = SegmentsFolder.DescendantAdded:Connect(function(obj)
-                if string.match(obj.Name, "^Keplie%d+$") then
-                    print("Fjone: Keplie Added ", obj.Name)
-                    highlightKeplie(obj)
-                end
-            end)
-            for _,obj in ipairs(SegmentsFolder:GetDescendants()) do
-                if string.match(obj.Name, "^Keplie%d+$") then
-                    print("Fjone: Keplie Founded ", obj.Name)
-                    highlightKeplie(obj)
-                end
-            end
-
-            InteractsConnection = InteractsFolder.DescendantAdded:Connect(function(obj)
-                if obj.Name == "InteractPart" and obj.Parent.Name == "EggSpawn" then
-                    print("Fjone: InteractPart Added")
-                    highlightEggSpawn(obj)
-                end
-            end)
-            for _,obj in ipairs(InteractsFolder:GetDescendants()) do
-                if obj.Name == "InteractPart" and obj.Parent.Name == "EggSpawn" then
-                    print("Fjone: InteractPart Founded ")
-                    highlightEggSpawn(obj)
-                end
-            end
-        end
+        doifmap()
+        addedfolder:GetPropertyChangedSignal("Name"):Connect(doifmap)
     end)
 end
 
