@@ -286,7 +286,7 @@ end
 local ori_getscore = MachineMinigame.GetMinigameScore
 
 MachineMinigame.GetMinigameScore = function(self, ...)
-    ori_getscore(self, ...)
+    --ori_getscore(self, ...)
     return "Perfect"
 end
 
