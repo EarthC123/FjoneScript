@@ -286,8 +286,8 @@ end
 local ori_getscore = MachineMinigame.GetMinigameScore
 
 MachineMinigame.GetMinigameScore = function(self, ...)
-    --ori_getscore(self, ...)
-    return "Perfect"
+    return ori_getscore(self, ...)
+    -- return "Perfect"
 end
 
 -- auto collect Stuffing
