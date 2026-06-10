@@ -18,7 +18,10 @@ local TrainpartFolder=MachineFolder:WaitForChild("ItemCollection")
 
 local BuffHandler = require(replicated.Shared.Modules.BuffHandler)
 local CharacterControl = require(plr.PlayerScripts.Client.CharacterController)
-local MachineMinigame = require(plr.PlayerScripts.Client.Interface.UIController.GameUI.MachineMinigame)
+local MachineMinigameSession = require(plr.PlayerScripts.Client.Interface.UIController.GameUI.MinigameHandler.Sessions)
+local BrokenMachineMinigame = require(plr.PlayerScripts.Client.Interface.UIController.GameUI.MinigameHandler.Minigames.Broken)
+local SoundController = require(replicated.Shared.Modules.SoundController)
+local rng = Random.new(tick())
 
 -- esp
 local STYLE_Machine = {
@@ -222,10 +225,10 @@ local folder_rules = {
 
 local Map_Rules = {
     --workspace.Map.Segments.Segment[2].KeplieHold.KeplieRoot.Keplie1
-    ["Segments"] = {
-        matchstr = "^Keplie%d+$",
-        handler = highlightKeplie
-    },
+    --["Segments"] = {
+    --    matchstr = "^Keplie%d+$",
+    --    handler = highlightKeplie
+    --},
     --workspace.Map.Interact.EggSpawn.InterractPart
     ["Interact"] = {
         matchstr = "^InteractPart$",
@@ -283,11 +286,29 @@ BuffHandler.IsActive = function(self, buffname)
 end
 
 -- skillcheck Always Success
-local ori_getscore = MachineMinigame.GetMinigameScore
-
-MachineMinigame.GetMinigameScore = function(self, ...)
-    return ori_getscore(self, ...)
-    -- return "Perfect"
+local targetAngleRange = { 135, 315 }
+BrokenMachineMinigame.Start=function(session)
+	local minigameGui = plrgui:FindFirstChild("GameUI")
+	if minigameGui then
+		minigameGui = minigameGui:FindFirstChild("PlushieMinigame")
+	end
+	if minigameGui then
+		local rootFrame = minigameGui:FindFirstChild("Root")
+		if rootFrame then
+			local payload = session.payload or {}
+			local targetAngle = payload.targetAngle or rng:NextInteger(targetAngleRange[1], targetAngleRange[2])
+			local result="Perfect"
+			SoundController.PlaySound("SFX.Machine.Minigame" .. result, false)
+			print("Fjone:", session.sessionId, result, targetAngle)
+			MachineMinigameSession.Submit(session.sessionId, {
+				["success"] = result == "Perfect" and true or result == "Okay",
+				["data"] = {
+					["response"] = result,
+					["endAngle"] = targetAngle
+				}
+			})
+		end
+	end
 end
 
 -- auto collect Stuffing
