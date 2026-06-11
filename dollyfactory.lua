@@ -20,8 +20,10 @@ local BuffHandler = require(replicated.Shared.Modules.BuffHandler)
 local CharacterControl = require(plr.PlayerScripts.Client.CharacterController)
 local MachineMinigameSession = require(plr.PlayerScripts.Client.Interface.UIController.GameUI.MinigameHandler.Sessions)
 local BrokenMachineMinigame = require(plr.PlayerScripts.Client.Interface.UIController.GameUI.MinigameHandler.Minigames.Broken)
+local DroneMachinrMinigame = require(plr.PlayerScripts.Client.Interface.UIController.GameUI.MinigameHandler.Minigames.Drone)
 local SoundController = require(replicated.Shared.Modules.SoundController)
 local rng = Random.new(tick())
+local MinigamesData = require(replicated.Shared.GameData.Minigames)
 
 -- esp
 local STYLE_Machine = {
@@ -310,6 +312,129 @@ BrokenMachineMinigame.Start=function(session)
 		end
 	end
 end
+
+local droneConfig = (MinigamesData.Data and MinigamesData.Data.Drone or {}).Config or {}
+local basePeriod = droneConfig.BasePeriod or 2.6
+local perfectHoldThreshold = droneConfig.PerfectHoldThreshold or 0.8
+local goodHoldThreshold = droneConfig.GoodHoldThreshold or 0.1
+DroneMachinrMinigame.Start=function(session)
+	local function step(state, dt)
+		local holdFraction = perfectHoldThreshold
+		local resolvedResult = perfectHoldThreshold <= holdFraction and "Perfect" or (goodHoldThreshold <= holdFraction and "Good" or "OK")
+		MachineMinigameSession.Respond(state.session.sessionId, resolvedResult, {
+			["holdFraction"] = holdFraction
+		})
+	end
+	local droneState = {
+		["session"] = session,
+	}
+	session.trove:Add(RunService.RenderStepped:Connect(function(dt)
+		-- upvalues: (ref) step, (copy) droneState
+		-- [[ func_23 | 5 instrs | line_defined=614 ]]
+		step(droneState, dt)
+	end))
+	return true
+end
+
+--[[ more stealthy drone machine auto skill check
+local basePumpingFraction = droneConfig.BasePumpingFraction or 0.6
+
+local function applyServerState(state, serverData)
+	if typeof(serverData) ~= "table" then
+		return
+	end
+	if typeof(serverData.period) == "number" and serverData.period > 0 then
+		state.period = serverData.period
+		state.session.state.period = serverData.period
+		if state.machine then
+			state.machine:SetAttribute("DronePeriod", serverData.period)
+		end
+	end
+	if typeof(serverData.pumpingFraction) == "number" then
+		state.pumpingFraction = math.clamp(serverData.pumpingFraction, 0.05, 0.95)
+		state.session.state.pumpingFraction = state.pumpingFraction
+	end
+	if typeof(serverData.randomizePumpingFraction) == "boolean" then
+		state.randomizePumpingFraction = serverData.randomizePumpingFraction
+	end
+	if typeof(serverData.pumpingFractionMin) == "number" then
+		state.pumpingFractionMin = math.clamp(serverData.pumpingFractionMin, 0.05, 0.95)
+	end
+	if typeof(serverData.pumpingFractionMax) == "number" then
+		state.pumpingFractionMax = math.clamp(serverData.pumpingFractionMax, 0.05, 0.95)
+	end
+end
+
+DroneMachinrMinigame.Start=function(session)
+	local payload = session.payload
+	local machineInstance
+	if typeof(payload) == "table" then
+		machineInstance = payload.machine
+	end
+
+	local droneState = {
+		session = session,
+		machine = machineInstance,
+		period = basePeriod,
+		pumpingFraction = basePumpingFraction,
+		randomizePumpingFraction = false,
+		pumpingFractionMin = droneConfig.PumpingFractionMin or 0.45,
+		pumpingFractionMax = droneConfig.PumpingFractionMax or 0.75,
+		segments = {},
+		scrollPx = 0,
+		nextSpawnScrollLeft = nil,
+		nextKind = "Pumping",
+		currentSegment = nil,
+		holdActive = false,
+		pressPrev = false,
+		ignoreUntilRelease = false,
+		pendingLeak = nil,
+		running = true
+	}
+
+	session.state.period = droneState.period
+	session.state.pumpingFraction = droneState.pumpingFraction
+
+	function session.state._onUpdate(updateData)
+		applyServerState(droneState, updateData)
+	end
+
+	if machineInstance then
+		machineInstance:SetAttribute("DronePeriod", droneState.period)
+	end
+
+	local function getEstimatedReportInterval()
+		local period = math.max(droneState.period, 0.05)
+		local pumpingFraction = math.clamp(droneState.pumpingFraction, 0.05, 0.95)
+		return period * pumpingFraction + period * (1 - pumpingFraction)
+	end
+
+	session.trove:Add(function()
+		droneState.running = false
+	end)
+
+	task.spawn(function()
+		while droneState.running and not session.completed do
+			task.wait(getEstimatedReportInterval())
+			if not droneState.running or session.completed then
+				break
+			end
+			MachineMinigameSession.Respond(session.sessionId, "Perfect", {
+				holdFraction = perfectHoldThreshold
+			})
+		end
+	end)
+
+	return true
+end
+
+DroneMachinrMinigame.OnUpdate=function(session, updateData)
+	local onUpdateFn = session.state and session.state._onUpdate
+	if typeof(onUpdateFn) == "function" then
+		onUpdateFn(updateData)
+	end
+end
+--]]
 
 -- auto collect Stuffing
 local function interactWithPrompt(prompt)
