@@ -409,9 +409,9 @@ DroneMachinrMinigame.Start=function(session)
 		return period * pumpingFraction + period * (1 - pumpingFraction)
 	end
 
-	session.trove:Add(function()
-		droneState.running = false
-	end)
+--	session.trove:Add(function()
+--		droneState.running = false
+--	end)
 
 	task.spawn(function()
 		while droneState.running and not session.completed do
